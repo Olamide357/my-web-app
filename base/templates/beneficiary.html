@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Beneficiaries</h2>
+<a href="{% url 'addbeneficiary' %}" style="margin-bottom: 10px; display: inline-block;" class=" btn btn-lg btn-primary"><strong>+</strong>Add Beneficiary</a>
+
+<div style="display: flex-block; flex-wrap: wrap; gap: 20px; padding-top: 15px;">
+    {% for b in beneficiaries %}
+    <div style="flex:1 0 calc(50% - 10px); border: 1px solid #ddd; padding: 10px; border-radius: 8px; background: white; display: flex; align-items: center; justify-content: space-between;  margin-bottom: 10px;">
+        <div style="display: flex; align-items: center;">
+        <div style="font-size: 24px; margin-right: 10px;">
+            {% if b.service_type == "airtime" %}
+            {% elif b.service_type == "data" %}
+            {% elif b.service_type == "tv" %}
+            {% elif b.service_type == "electricity" %}
+            {% else %}
+            {% endif %}
+        </div>
+        <div>
+            <strong>{{ b.name }}</strong><br>
+            <small><strong>{{ b.provider }} - {{ b.service_type }} - {{ b.account_number }}</strong></small>
+        </div>
+    </div>
+    <div>
+        <a href="{% url 'editbeneficiary' b.id %}" class="btn btn-primary btn-sm">Edit</a>
+        <a href="{% url 'usebeneficiary' b.pk  %}" class="btn btn-sm btn-primary">Use</a>
+        
+
+        <a href="{% url 'deletebeneficiary' b.id %}" style="background: red; font-size: 13px; display: block;" class=" btn btn-primary btn-sm">Delete</a>
+    </div>
+</div>
+{% empty %}
+<p>No beneficiaries saved yet.</p>
+{% endfor %}
+</div>
+
+{% endblock %}

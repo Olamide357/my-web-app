@@ -1,0 +1,26 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div>
+    <img src="{% static 'images/etisalat.png' %}" alt="MTN" width="50" height="50">
+</div>
+<h2>ETISALAT Airtime Purchase</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Buy Airtime</button>
+</form>
+
+<style>
+    img {
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+    </style>
+
+{% endblock %}

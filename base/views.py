@@ -1,0 +1,194 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Transaction
+from django.http import HttpResponse, JsonResponse
+from django.utils.dateformat import DateFormat
+from .models import Beneficiary
+from .forms import BeneficiaryForm
+from django.contrib import messages
+from django.contrib.auth.models import User
+
+
+# Create your views here.
+
+def homePage(request):
+    return render(request, 'home.html')
+
+def dashboardPage(request):
+    return render(request, 'dashboard.html')
+#===================== History Views ================================================================#
+
+# History Page
+def historyPage(request):
+    transactions = Transaction.objects.filter(user=request.user).order_by('-date')
+    return render(request, 'history.html', {'transactions': transactions})
+    
+
+# Receipt
+def transactionReceipt(request, transaction_id):
+    txn = get_object_or_404(Transaction, id=transaction_id, user=request.user)
+    data = {
+        "date": DateFormat(txn.date).format("d M Y H:i"),
+        "service": txn.service.title(),
+        "provider": txn.provider,
+        "amount": f"₦{txn.amount}",
+        "phone_or_meter": txn.phone_or_meter,
+        "status": txn.status.title(),
+        "reference_id": txn.reference_id
+    }
+    return JsonResponse(data)
+
+# Receipt Download View
+def transactionReceiptPDF(request, transaction_id):
+    transaction = get_object_or_404(Transaction, id=transaction_id, user=request.user)
+    pdf = render_to_pdf('receiptPDF.html', {'transaction': txn})
+
+    if pdf:
+        filename = f"Receipt_{transaction.request_id}.pdf"
+        response = HttpResponse(pdf, content_type='application/pdf')
+        content = f"attachment; filename={filename}"
+
+        response['content-Disposition'] = content
+        return response
+    return HttpResponse("Error generating PDF", status=500)
+
+#==================== History End ==============#
+
+#====================================== BENEFICIARY =======================================#
+# BENEFICIARY VIEWS
+def beneficiaryPage(request):
+    beneficiaries = Beneficiary.objects.filter(user=request.user).order_by('-date_added')
+    return render(request, 'beneficiary.html', {'beneficiaries': beneficiaries})
+
+# ADD BENEFICIARY VIEWS
+def addBeneficiary(request):
+    if request.method == 'POST':
+        form = BeneficiaryForm(request.POST)
+        if form.is_valid():
+            beneficiary = form.save(commit=False)
+            beneficiary.user = request.user
+            beneficiary.save()
+            messages.success(request, 'Beneficiary added successfully.')
+            return redirect('beneficiary_list')
+    else:
+        form = BeneficiaryForm()
+    return render(request, 'addbeneficiary.html', {'form': form})
+
+# EDIT BENEFICIARY VIEWS
+def editBeneficiary(request, pk):
+    beneficiary = get_object_or_404(Beneficiary, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = BeneficiaryForm(request.POST, instance=beneficiary)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Beneficiary updated successfully.")
+            return redirect('beneficiary_list')
+    
+    else:
+        form = BeneficiaryForm(instance=beneficiary)
+    return render(request, 'editbeneficiary.html', {'form': form})
+
+# DELETE BENEFICIARY VIEWS
+def deleteBeneficiary(request, beneficiary_id):
+    beneficiary = get_object_or_404(Beneficiary, id=beneficiary_id, user=request.user)
+    if request.method == 'POST':
+        beneficiary.delete()
+        messages.success(request, 'Beneficiary deleted successfully.')
+        return redirect('beneficiary_list')
+    return render(request, 'deletebeneficiary.html', {'beneficiary': beneficiary})
+
+# USE BENEFECIARY
+from django.urls import reverse
+from django.http import Http404
+def useBeneficiary(request, pk):
+    beneficiary = get_object_or_404(Beneficiary, pk=pk, user=request.user)
+
+    service_provider_map = {
+        'airtime': {
+            'MTN': 'mtn_airtime',
+            'GLO': 'glo_airtime',
+            'AIRTEL': 'airtel_airtime',
+            '9MOBILE': 'ninemobile_airtime',
+        },
+        'data': {
+            'MTN': 'mtn_data',
+            'GLO': 'glo_data',
+            'AIRTEL': 'airtel_data',
+            '9MOBILE': 'ninemobile_data',
+            'ETISALAT': 'ninemobile_data',
+        },
+        'tv': {
+            'DSTV': 'dstv',
+            'GOTV': 'gotv',
+            'STARTIME': 'startime',
+            'STARTIMES': 'startime',
+        },
+        'electricity': {
+            'IKEDC PREPAID': 'ikedc_prepaid',
+            'IKEDC POSTPAID': 'ikedc_postpaid',
+        },
+    }
+    service = beneficiary.service_type.lower()
+    provider = beneficiary.provider.upper()
+    url_name = service_provider_map.get(service, {}).get(provider)
+    if not url_name:
+        raise Http404("Invalid service or provider")
+
+    base_url = reverse(url_name)
+    return redirect(f'{base_url}?phone={beneficiary.account_number}')
+#=============== BENEFICIARY END =====================#
+
+#================== ABOUT VIEWS =====================#
+def aboutPage(request):
+    return render(request, 'about.html')
+
+from django.contrib.auth import update_session_auth_hash
+from .forms import editProfileForm, changePasswordForm
+
+def editAccount(request):
+    user = request.user
+    user_profile = getattr(user, 'userprofile', None)
+    if request.method == 'POST':
+        if 'edit_profile' in request.POST:
+            profile_form = editProfileForm(request.POST, instance=user)
+            password_form = changePasswordForm()
+            
+            if profile_form.is_valid():
+                profile_form.save()
+                if user_profile:
+                    user_profile.phone = request.POST.get('phone', user_profile.phone)
+                    user_profile.save()
+                    messages.success(request, "Profile updated successfully.")
+                    return redirect('about')
+        
+        elif 'change_password' in request.POST:
+            profile_form = editProfileForm(instance=user)
+            password_form = changePasswordForm(request.POST)
+            if password_form.is_valid():
+                new_password = password_form.cleaned_data['new_password']
+                confirm_password = password_form.cleaned_data['confirm_password']
+
+                if new_password == confirm_password:
+                    user.set_password(new_password)
+                    user.save()
+                    update_session_auth_hash(request, user)
+                    messages.success(request, "Password changed successfully.")
+                    return redirect('about')
+                else:
+                    messages.error(request, "Passwords do not match.")
+    else:
+        profile_form = editProfileForm(instance=user_profile)
+
+        if user_profile:
+            profile_form.initial['phone'] = user_profile.phone
+        password_form = changePasswordForm()
+
+    return render(request, 'edit.html', {'profile_form': profile_form, 'password_form': password_form})
+
+#============== DELETE ACCOUNT VIEWS =============#
+# @login_required
+def deleteAccount(request):
+    request.user.delete()
+    messages.success(request, "Your account has been deleted.")
+    return redirect('homepage')

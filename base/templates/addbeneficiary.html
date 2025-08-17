@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container mt-5">
+    <h3 class="mb-4">Add Beneficiary</h3>
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-group mb-3">
+            <label for="name">Beneficiary Name</label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="E.g. Friend, Office, Customer" required="required">
+        </div>
+        <div class="form-group mb-3">
+            <label for="service_type">Category</label>
+            <select name="service_type" id="category" class="form-control" required="required">
+                <option value="">--Select Category--</option>
+                <option value="airtime">Airtime</option>
+                <option value="data">Data</option>
+                <option value="tv">TV</option>
+                <option value="electricity">Electricity</option>
+            </select>
+        </div>
+        <div class="form-group mb-3">
+            <label for="account_number">Phone/ Smartcard/ Meter Number</label>
+            <input type="text" name="account_number" class="form-control" id="account_number" required="required">
+        </div>
+        <div class="form-group mb-3">
+            <label for="provider">Network or Provider</label>
+            <select name="provider" id="provider" class="form-control" required="required">
+                <option value="">--Select--</option>
+                <option value="MTN">MTN</option>
+                <option value="GLO">GLO</option>
+                <option value="AIRTEL">Airtel</option>
+                <option value="9MOBILE">9Mobile</option>
+                <option value="DSTV">DSTV</option>
+                <option value="GOTV">GOTV</option>
+                <option value="STARTIMES">STARTIMES</option>
+                <option value="IKEDC PREPAID">IKEDC PREPAID</option>
+                <option value="IKEDC POSTPAID">IKEDC POSTPAID</option>
+                <option value="EKEDC PREPAID">EKEDC PREPAID</option>
+                <option value="EKEDC POSTPAID">EKEDC POSTPAID</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Beneficiary</button>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Home | WebSubApp{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Wallet Card -->
+  <div class="wallet-container d-flex justify-content-between align-items-center p-3 mb-4">
+    <div class="d-flex align-items-center">
+      <div class="container-1">
+
+        <p id="sign" style="text-align: center; margin-left: 20px;">
+            <span id="link"><a href="{% url 'login' %}" style="color: #edf1f3; font-size: 18px;">sign in</a></span>, fund your wallet & and enjoy more discount!</p>
+
+        <p id="sign" style="text-align: center;">Don't have an account? 
+            <span id="sign"><a href="{% url 'signup' %}" style="color: #edf1f3; font-size: 18px;">sign up</a></span></p>
+    </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div class="alert alert-warning text-center mb-4">
+    📢 No new notifications.
+  </div>
+
+  <!-- Subscription Grids -->
+  <div class="service-section mb-4">
+
+    <!-- Airtime -->
+    <div class="mb-3 sub-container">
+      <h5>Airtime</h5>
+      <div class="d-flex justify-content-between flex-wrap">
+        <!-- MTN -->
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/m-t-n.png' %}" alt="MTN"></a>
+        <!-- GLO -->
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/glo.png' %}" alt="GLO"></a>
+        <!-- Airtel -->
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/airtel.png' %}" alt="Airtel"></a>
+        <!-- Etisalat -->
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/etisalat.png' %}" alt="9Mobile"></a>
+      </div>
+    </div>
+
+    <!-- Data -->
+    <div class="mb-3 sub-container">
+      <h5>DATA</h5>
+      <div class="d-flex justify-content-between flex-wrap">
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/m-t-n.png' %}" alt="MTN"></a>
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/glo.png' %}" alt="GLO"></a>
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/airtel.png' %}" alt="Airtel"></a>
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/etisalat.png' %}" alt="9Mobile"></a>
+      </div>
+    </div>
+
+    <!-- TV Subscription -->
+    <div class="mb-3 sub-container">
+      <h5>TV SUBSCRIPTION</h5>
+      <div class="d-flex justify-content-between flex-wrap">
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/dstv.png' %}" alt="DSTV"></a>
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/gotv.png' %}" alt="GOtv"></a>
+        <a href="{% url 'login' %}" class="service-link"><img src="{% static 'images/startime.png' %}" alt="Startimes"></a>
+      </div>
+    </div>
+
+    <!-- Electricity -->
+    <div class="mb-3 sub-container" style=" margin: 20px 0;">
+      <h5>ELECTRICITY</h5>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 20px; justify-items: center; margin-top: 15px;">
+        <!-- Ikeja -->
+        <span class="dropdown mb-5">
+          <img src="{% static 'images/ikedc.png' %}" alt="Ikeja" style="width: 60px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content ">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+        
+        <!-- EKO -->
+         <span class="dropdown mb-5">
+          <img src="{% static 'images/eko.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content ">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+
+        <!-- ABUJA -->
+        <span class="dropdown mb-5">
+          <img src="{% static 'images/aedc.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content ">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+
+        <!-- KADUNA -->
+        <span class="dropdown mb-5">
+          <img src="{% static 'images/kaduna.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content ">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+
+        <!-- IBADAN -->
+        <span class="dropdown mb-5">
+          <img src="{% static 'images/ibedc.png' %}" alt="Ikeja" style="width: 70px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content ">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+
+        <!-- JOS -->
+        <span class="dropdown mb-5">
+          <img src="{% static 'images/jos.png' %}" alt="Ikeja" style="width: 60px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
+          <div class="dropdown-content">
+            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
+            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
+          </div>
+        </span>
+
+
+      </div>
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .wallet-container {
+    background: linear-gradient(90deg, #007bff, #00c6ff);
+    color: white;
+    border-radius: 12px;
+  }
+  .wallet-container i {
+    cursor: pointer;
+    font-size: 20px;
+  }
+  .wallet-container h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-family: monospace;
+  }
+  .service-link img {
+    width: 70px;
+    height: 70px;
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+  .service-link img:hover {
+    transform: scale(1.05);
+  }
+  h5 {
+    font-weight: bold;
+  }
+
+  .sub-container{
+    background-color: rgb(190, 189, 189);
+    border-radius: 10px;
+    padding: 15px;
+  }
+  h5{
+    color: white;
+    margin-bottom: 25px;
+    border-bottom: 2px solid blue;
+  }
+
+    /* Drop down */
+  .dropdown{
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+  }
+  .dropdown-content{
+    border-radius: 10px;
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 80px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  /* Dropdown link */
+  .dropdown-content a{
+    border-radius: 7px;
+    color: black;
+    padding: 10px 14px;
+    text-decoration: none;
+    display: block;
+  }
+  .dropdown-content a:hover {
+    background-color: #f1f1f1;
+  }
+</style>
+
+<script>
+  // DROP DOWN//
+  document.addEventListener("DOMContentLoaded", function () {
+    const images = document.querySelectorAll(".menu-img");
+    images.forEach(img => {
+      img.addEventListener("click", function () {
+        const allMenus = document.querySelectorAll(".dropdown-content");
+        // close all other menu
+        allMenus.forEach(menu => {
+          if (menu !== this.nextElementSibling){menu.style.display = "none";}
+        });
+        // Toggle clicked menu
+        const dropdown = this.nextElementSibling;
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+      });
+    });
+    document.addEventListener("click", function (event) {
+      if ( !event.target.closest(".dropdown")){
+        document.querySelectorAll(".dropdown-content").forEach(menu => {
+          menu.style.display = "none";
+        });
+      }
+    });
+  });
+</script>
+{% endblock %}

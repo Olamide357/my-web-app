@@ -1,0 +1,43 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="image-field">
+    <img src="{% static 'images/m-t-n.png' %}" alt="MTN">
+</div>
+<h2>MTN Airtime Purchase</h2>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="phone">Phone Number</label>
+    <input type="text" name="phone" required="required"><br><br>
+
+    <label for="amount">Amount</label>
+    <input type="number" name="amount" required="required"><br><br>
+
+    <label for="password">Password</label>
+    <input type="password" name="password" required="required"><br><br>
+    
+    <button type="submit">Buy Airtime</button>
+    <div style="margin-top: 16px;">{% for message in messages %}</div>
+    <div style="padding: 10px; border-radius: 10px; margin-bottom: 8px; background: {% if m.tags == 'error' %}#ffe5e5{% else %}#e9ffe9{% endif %};">{{ message }}</div>
+    <div>{% endfor %}</div>
+
+    {% if response %}
+    <h3>API Response:</h3>
+    <pre>{{ response|safe }}</pre>
+    {% endif %}
+</form>
+
+<style>
+    img {
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+    </style>
+
+{% endblock %}

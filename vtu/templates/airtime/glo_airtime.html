@@ -1,0 +1,30 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div>
+    <img src="{% static 'images/glo.png' %}" alt="MTN">
+</div>
+<h2>GLO Airtime Purchase</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {{ form.message }}
+    <button type="submit">Buy Airtime</button>
+    {% for message in messages %}
+    <p style="background: red; color: white; margin-top: 10px; width: auto;">{{ message }}</p>
+    {% endfor %}
+</form>
+
+<style>
+    img {
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+    </style>
+
+{% endblock %}

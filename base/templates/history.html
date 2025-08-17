@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2 class="mb-3">Transactions</h2>
+<div style="margin-bottom: 10px;">
+    <input type="text" id="searchBox" placeholder="Search transactions..." style="padding: 5px; width: 100%; max-width: 300px;">
+</div>
+
+<div id="transactionList">
+    {% for txn in transaction %}
+    <div class="transaction-card" data-id="{{ txn.id }}" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: white; cursor: pointer;">
+        <div style="display: flex; align-items: center;">
+            <div style="font-size: 24px; margin-right: 10px;">
+                {% if txn.service == "airtime" %}
+                {% elif txn.service == "data" %}
+                {% elif txn.service == "tv" %}
+                {% elif txn.service == "electricity" %}
+                {% elif txn.service == "wallet" %}
+                {% else %}
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-weight: bold;">{{ txn.provider }} {{ txn.service|title }}</div>
+                <div style="font-size: 13px; color: #777;">{{ txn.date|date:"d M Y H:i" }}</div>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <div style="color: green; font-weight: bold;"> ₦{{ txn.amount }}</div>
+            <div>
+                {% if txn.status == "success" %}
+                <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Success</span>
+
+                {% elif txn.status == "pending" %}
+                <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Pending</span>
+
+                {% else %}
+                <span style="background: #f8d7da; color: #721c24; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Failed</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Hidden receipt section -->
+     <div class="receipt" id="receipt-{{ txn.id }}" style="display: none; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fafafa;">
+        <p>Laoding receipt...</p>
+     </div>
+    {% empty %}
+    <p>No transactions yet.</p>
+    {% endfor %}
+</div>
+<script>
+    document.querySelectorAll('.transaction-card').forEach(card => {
+        card.addEventListener('click', function () {
+            let txnId = this.getAttribute('data-id');
+            let receiptDiv = document.getElementById('receipt-' + txnId);
+            // Toggle Visibility
+            if (receiptDiv.style.display === "block") {
+                receiptDiv.style.display = "none";
+                return;
+            }
+            // Hide all other receipts
+            document.querySelectorAll('.receipt').forEach(r => r.style.display = "none");
+            // Fetch receipt data
+            fetch(`/transaction/receipt/${txnId}/ajax`)
+            .then(res => res.json())
+            .then(data => {
+                receiptDiv.innerHTML = `<p><strong>Date:</strong> ${data.date}</p>
+                <p><strong>Service:</strong> ${data.service}</p>
+                <p><strong>Provider:</strong> ${data.provider}</p>
+                <p><strong>Amount:</strong> ${data.amount}</p>
+                <p><strong>Phone/Meter:</strong> ${data.phone_or_meter}</p>
+                <p><strong>Status:</strong> ${data.status}</p>
+                <p><strong>Reference ID:</strong> ${data.reference_id}</p>
+                <button onclick="window.print()">Print</button>`;
+                receiptDiv.style.display = "block";
+            });
+        });
+    });
+    // Search Filter
+    document.getElementById('searchBox').addEventListener('keyup', function () {
+        let filter = this.value.toLowerCase();
+        let cards = document.querySelectorAll('#transactionList > div');
+        cards.forEach(card => {
+            let text = card.innerText.toLowerCase();
+            card.style.display = text.includes(filter) ? 'flex' : 'none';
+        });
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div>
+    <img src="{% static 'images/glo.png' %}" alt="MTN" width="60" height="60">
+</div>
+<h2>Glo Data Purchase</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Buy Data</button>
+</form>
+
+ <div style="margin-top: 16px;">{% for message in messages %}</div>
+    <div style="padding: 10px; border-radius: 10px; margin-bottom: 8px; background: {% if m.tags == 'error' %}#ffe5e5{% else %}#e9ffe9{% endif %};">{{ message }}</div>
+    <div>{% endfor %}</div>
+
+    {% if response %}
+    <h3>API Response:</h3>
+    <pre>{{ response|safe }}</pre>
+    {% endif %}
+
+    <style>
+    img {
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+    </style>
+
+{% endblock %}

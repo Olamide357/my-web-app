@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Login | WebSubApp{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">
+        <h2>Login to Your Account</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" class="login-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="form-group">
+                {{ form.identifier.label_tag }}
+                {{ form.identifier }}
+                {{ form.identifier.errors }}
+            </div>
+            <div class="form-group position-relative" style="position: relative;">
+                {{ form.password.label_tag }}
+                {{ form.password }}
+                <i class="fa fa-eye" id="togglePassword" style="cursor: pointer; position: absolute; top: 75%; right: 10px; transform: translateY(-50%);"></i>
+                {{ form.password.errors }}
+            </div>
+
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+
+        <div class="extra-options">
+            <p><a href="{% url 'dashboard' %}">Forgot Password?</a></p>
+            <p>Don't have an account? <a href="{% url 'signup' %}">Sign up here</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        background: #f5f7fa;
+        min-height: 100vh;
+    }
+    .login-box {
+        width: 100%;
+        max-width: 400px;
+        background: white;
+        padding: 30px 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .login-box h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 22px;
+        color: #222;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #333;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+    .btn-login {
+        width: 100%;
+        background: #026cdf;
+        color: white;
+        border: none;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .btn-login:hover {
+        background: #024ea5;
+    }
+    .alert {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+    .alert.success { background: #d4edda; color: #155724; }
+    .alert.warning { background: #fff3cd; color: #856404; }
+    .alert.error { background: #f8d7da; color: #721c24; }
+    .extra-options {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+    }
+    .extra-options a {
+        color: #026cdf;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    @media (max-width: 500px) {
+        .login-box {
+            padding: 25px 20px;
+        }
+        .login-box h2 {
+            font-size: 20px;
+        }
+    }
+</style>
+
+<script>
+     document.addEventListener("DOMContentLoaded", function () {
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordInput = document.getElementById("id_password");
+    
+
+    togglePassword.addEventListener("click", function () {
+        const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+        passwordInput.setAttribute("type", type);
+        this.classList.toggle("fa-eye");
+        this.classList.toggle("fa-eye-slash");
+    });
+    });
+</script>
+{% endblock %}

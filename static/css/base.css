@@ -1,0 +1,21 @@
+@media (max-width:768px){
+    .footer-fixed{
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: white;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-around;
+        padding: 0.75rem 0;
+    }
+}
+
+.dropdown-content{
+    display: none;
+}
+
+.dropdown-content .dropdown-active{
+    display: block;
+}

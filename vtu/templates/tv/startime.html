@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<div>
+    <img src="{% static 'images/startime.png' %}" alt="MTN" width="60" height="60">
+</div>
+<h2>STARTIME Subscription</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Subscribe</button>
+</form>
+
+<style>
+    img {
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+    </style>
+
+{% endblock %}
