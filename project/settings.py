@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', "dev-secret")
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,.onrender.com,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng"
+    "localhost,127.0.0.1,.onrender.com,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng,my-web-app-wjj4.onrender.com"
 ).split(",")
 
 CSRF_COOKIE_SECURE = True
