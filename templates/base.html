@@ -104,8 +104,8 @@
     .auth-links {
       display: flex;
       justify-content: center;
-      gap: 1rem;
-      margin: 1rem 0;
+      gap: 0.3rem;
+      margin: 0.5rem 0;
     }
 
     .auth-btn {
@@ -203,7 +203,7 @@
     {% else %}
 <div class="auth-links">
   <a href="{% url 'signup' %}" class="auth-btn signup">Signup</a>
-<a href="{% url 'login' %}" style="margin-left: -370px;" class="auth-btn login">Login</a>
+<a href="{% url 'login' %}" class="auth-btn login">Login</a>
 </div>
 {% endif %}
     <img src="{% static 'images/logo.png' %}" alt="App Logo" class="logo">
