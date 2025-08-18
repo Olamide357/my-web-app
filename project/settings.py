@@ -239,8 +239,9 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
 
 CSRF_TRUSTED_ORIGINS = [
+    "https://my-web-app-wjj4.onrender.com",
     "https://websubapp.name.ng",
-    "https://www.websubapp.name,ng",
+    "https://www.websubapp.name.ng",
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
