@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import environ
 from decouple import config
+import dj_database_url
 
 
 
