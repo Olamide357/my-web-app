@@ -41,7 +41,7 @@
       font-size: clamp(18px, 2.5vw, 28px);
     }
     p{
-      font-size: 1rem;
+      font-size: 3rem;
     }
     /* Header */
     .header {
@@ -101,6 +101,30 @@
       cursor: pointer;
     }
 
+    .auth-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .auth-btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .auth-btn.login {
+      background: #007bff;
+      color: white;
+    }
+
+    .auth-btn.signup {
+      background: #28a745;
+      color: white;
+    }
     /* Footer */
     .fixed-footer {
       position: fixed;
@@ -125,10 +149,10 @@
       .header img.logo {
         height: 28px;
       }
-      h1 {font-size: 1.5rem;}
-      h2 {font-size: 1.25rem;}
-      h3 {font-size: 1rem;}
-      h4 {font-size: 0.75rem;}
+      h1 {font-size: 3.5rem;}
+      h2 {font-size: 3.25rem;}
+      h3 {font-size: 3rem;}
+      h4 {font-size: 2.75rem;}
       h5 {font-size: 0.5rem;}
       img {max-width: 100%;}
       .container {padding: 0.5rem;}
@@ -177,8 +201,10 @@
     {% if user.is_authenticated %}
     <div class="left-nav-toggle" onclick="openNav()"><i class="fas fa-bars"></i></div>
     {% else %}
-<a href="{% url 'signup' %}">Signup</a>
-<a href="{% url 'login' %}" style="margin-left: -370px;">Login</a>
+<div class="auth-links">
+  <a href="{% url 'signup' %}" class="auth-btn login">Signup</a>
+<a href="{% url 'login' %}" style="margin-left: -370px;" class="auth-btn signup">Login</a>
+</div>
 {% endif %}
     <img src="{% static 'images/logo.png' %}" alt="App Logo" class="logo">
   </div>
