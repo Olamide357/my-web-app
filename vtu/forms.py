@@ -2,6 +2,13 @@ from django import forms
 from django.conf import settings
 
 
+#===================== AIRTIME FORM ==================#
+class AirtimeForm(forms.Form):
+    phone = forms.CharField(max_length=11, label='Phone Number')
+    amount = forms.DecimalField(max_digits=10, decimal_places=2)
+    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
+#======================================================#
+
 MTN_DATA_CHOICES = [
         ("500", '500MB SME (30 Days) - ₦250'),
         ("M1024", '1GB SME (30 Days) - ₦600'),
@@ -21,13 +28,6 @@ GLO_DATA_CHOICES = [
         ("glo-cg_m_10gb", '10GB (30 Days) CG - ₦4300'),
     ]
 
-
-#===================== AIRTIME FORM ==================#
-class AirtimeForm(forms.Form):
-    phone = forms.CharField(max_length=11, label='Phone Number')
-    amount = forms.DecimalField(max_digits=10, decimal_places=2)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
-#======================================================#
 
 #============= MTN DATA FORM ======================#
 class mtnDataForm(forms.Form):

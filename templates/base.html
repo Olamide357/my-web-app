@@ -201,10 +201,10 @@
     {% if user.is_authenticated %}
     <div class="left-nav-toggle" onclick="openNav()"><i class="fas fa-bars"></i></div>
     {% else %}
-<div class="auth-links">
-  <a href="{% url 'signup' %}" class="auth-btn signup">Signup</a>
-<a href="{% url 'login' %}" class="auth-btn login">Login</a>
-</div>
+    <div class="auth-links">
+    <a href="{% url 'signup' %}" class="auth-btn signup">Signup</a>
+    <a href="{% url 'login' %}" class="auth-btn login">Login</a>
+    </div>
 {% endif %}
     <img src="{% static 'images/logo.png' %}" alt="App Logo" class="logo">
   </div>

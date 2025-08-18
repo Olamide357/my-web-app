@@ -104,10 +104,10 @@ ACCOUNT_NAME = env('ACCOUNT_NAME')
 ACCOUNT_NUMBER = env('ACCOUNT_NUMBER')
 
 #------- VTPASS --------#
-VT_PASS_BASE = env('VTPASS_BASE', default='https://vtpass.com/api')
-# VT_PASS_API_KEY = env('VT_PASS_API_KEY')
+VTPASS_BASE_URL = env('VTPASS_BASE_URL', default='https://vtpass.com/api')
+VTPASS_APIKEY = env('VTPASS_APIKEY')
 VTPASS_PUBLIC_KEY = env('VTPASS_PUBLIC_KEY')
-VTPASS_SECRET = env('VTPASS_SCRET', default='')
+VTPASS_SECRET_KEY = env('VTPASS_SECRET_KEY', default='')
 VTPASS_SANDBOX = env.bool('VTPASS_SANDBOX', default=True)
 VTPASS_USERNAME= env('VTPASS_USERNAME')
 VTPASS_PASSWORD= env('VTPASS_PASSWORD')
@@ -180,12 +180,21 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(default=f"sqlite:///{BASE_DIR}/db.sqlite3", conn_max_age=600, ssl_require=True)
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
+    # "default": dj_database_url.config(default=f"sqlite:///{BASE_DIR}/db.sqlite3", conn_max_age=600, ssl_require=True)
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"postgres://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASS')}@{os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT')}/{os.environ.get('DB_NAME')}",
+        conn_max_age=600,
+        ssl_require=True,
+    )
+}
+
+
 
 
 # Password validation

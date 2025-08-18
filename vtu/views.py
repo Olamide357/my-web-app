@@ -6,9 +6,10 @@ from register.models import UserProfile
 from .forms import AirtimeForm, mtnDataForm, gloDataForm, airtelDataForm, ninemobileDataForm, DSTVForm, GOTVForm, STARTIMESForm, prepaidForm, postpaidForm
 from django.http import JsonResponse
 import requests, uuid, json,logging
-from base.models import Transaction
+from base.models import Transaction, Beneficiary
 from django.conf import settings
 from .utils import makeVTpassRequest
+from .vtpass import purchaseAirtime
 # from .decimal import Decimal
 
 
@@ -34,62 +35,73 @@ def mtnAirtime(request):
                 messages.error(request, "Incorrect Password")
                 return redirect('mtn_airtime')
             
+            if float(amount) < 50:
+                messages.error(request, "Minimum amount is 50")
+            
             profile = UserProfile.objects.get(user=request.user)
             if profile.wallet_balance < amount:
                 messages.error(request, "Insufficient wallet balance")
                 return redirect('mtn_airtime')
 
-            request_id = str(uuid.uuid4())
+            reference = str(uuid.uuid4())
 
-            transaction = Transaction.objects.create(
-                        user=request.user,
-                        amount = amount,
-                        phone=phone,
-                        status= "pending",
-                        request_id=request_id,
-                    )
-
-            url = f"{settings.SMEPLUG_BASE}/airtime/purchase"
-
-            payload = {
-            "network_id": 1,
-            "amount": str(amount),
-            "phone": phone,
-            "request_id": request_id
-        }
+            url = f"{settings.VTPASS_BASE_URL}/pay"
 
             headers = {
-            "Authorization": f"Bearer {settings.SMEPLUG_API_KEY}",
-            "Content-Type": "application/json",
-        }
+                "api-key": f"{settings.VTPASS_APIKEY}",
+                "secret-key": f"{settings.VTPASS_SECRET_KEY}",
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "serviceID": "mtn",
+                "amount": str(amount),
+                "phone": phone,
+                "request_id": reference
+            }
 
             try:
                 response = requests.post(url, json=payload, headers=headers,timeout=30)
+                data=response.json()
 
-                if response.status_code != 200:
-                    messages.error(request, f"SMEPLUG API Request failed: {response.text} ")
-                    return redirect('mtn_airtime')
-                data = response.json()
-
-                if data.get('status') is True:
+                if data.get("code") == "000":
+                    transaction = Transaction.objects.create(
+                        user=request.user,
+                        transaction_type = "airtime",
+                        provider = "MTN",
+                        amount = amount,
+                        phone=phone,
+                        status= "success",
+                        request_id=reference,
+                    )
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': 'Airtime recharge successful',
+                        'data': data,
+                        'transaction_id': transaction.id
+                    })
+                    messages.success(request, f"Airtime purchase successful.")
                     profile.wallet_balance -= amount
                     profile.save()
-                    transaction.status = "success"
-                    transaction.save()
-                    messages.success(request, f"MTN Airtime purchase successful.\nRef: {request_id}")
+                    return redirect('history')
 
-                    return redirect('receipt')
-                
                 else:
-                    messages.error(request, f"SMEplug Error: {data.get('msg') or data.get('errors')}")
-                    transaction.status = "failed"
-                    transaction.save()
+                    transaction = Transaction.objects.create(
+                        user=request.user,
+                        transaction_type = "airtime",
+                        provider = "MTN",
+                        amount = amount,
+                        phone=phone,
+                        status= "failed",
+                        # reference=reference
+                    )
+                    messages.error(request, f"Airtime purchase failed: {data.get('response_description')}")
                     return redirect('mtn_airtime')
 
             except requests.RequestException as e:
-                messages.error(request, f"Error contacting SMEplug: {e}")
-                transaction.status = "failed"
-                transaction.save()
+                messages.error(request, f"Error contacting VTPASS: {e}")
+                # transaction.status = "failed"
+                # transaction.save()
                 return redirect('mtn_airtime')
 
     else:
@@ -128,7 +140,7 @@ def gloAirtime(request):
                         request_id=request_id
                     )
 
-            url = f"{settings.SMEPLUG_BASE}/airtime/purchase"
+            url = f"{settings.VTPASS_BASE_URL}/pay"
 
             payload = {
             "network_id": 2,
