@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', "dev-secret")
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng"
+    "localhost,127.0.0.1,.onrender.com,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng"
 ).split(",")
 
 CSRF_COOKIE_SECURE = True
@@ -103,28 +103,14 @@ BANK_NAME = env('BANK_NAME')
 ACCOUNT_NAME = env('ACCOUNT_NAME')
 ACCOUNT_NUMBER = env('ACCOUNT_NUMBER')
 
-#--------------- SMEPLUG ---------------------#
-SMEPLUG_API_KEY = env('SMEPLUG_API_KEY')
-SMEPLUG_BASE = env('SMEPLUG_BASE')
-
-#------------ NEARLYFREE ---------------------#
-NEARLYFREE_API = env('NEARLYFREE_API')
-BASE64 = env('BASE64')
-NEARLYFREE_URL = env('NEARLYFREE_URL')
-
-#----------- PAYGOLD ----------------------#
-PAYGOLD_USERNAME = env('PAYGOLD_USERNAME')
-PAYGOLD_PASSWORD = env('PAYGOLD_PASSWORD')
-PAYGOLD_BASE_URL = env('PAYGOLD_BASE_URL')
-
 #------- VTPASS --------#
-VT_PASS_BASE = env('VT_PASS_BASE', default='https://vtpass.com/api')
+VT_PASS_BASE = env('VTPASS_BASE', default='https://vtpass.com/api')
 # VT_PASS_API_KEY = env('VT_PASS_API_KEY')
-VT_PASS_PUBLIC_KEY = env('VT_PASS_PUBLIC_KEY')
-VT_PASS_SECRET = env('VT_PASS_SCRET', default='')
+VTPASS_PUBLIC_KEY = env('VTPASS_PUBLIC_KEY')
+VTPASS_SECRET = env('VTPASS_SCRET', default='')
 VTPASS_SANDBOX = env.bool('VTPASS_SANDBOX', default=True)
-VT_PASS_USERNAME= env('VT_PASS_USERNAME')
-VT_PASS_PASSWORD= env('VT_PASS_PASSWORD')
+VTPASS_USERNAME= env('VTPASS_USERNAME')
+VTPASS_PASSWORD= env('VTPASS_PASSWORD')
 
 #=============================================#
 
