@@ -179,20 +179,38 @@ WSGI_APPLICATION = 'project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    # "default": dj_database_url.config(default=f"sqlite:///{BASE_DIR}/db.sqlite3", conn_max_age=600, ssl_require=True)
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+
+
+# Use Render DATABASE_URL if available, otherwise use local PostgreSQL, else fallback to SQLite
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"),
+            conn_max_age=600,
+            ssl_require=True,  # required for Render / payment APIs
+        )
     }
-}
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"postgres://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASS')}@{os.environ.get('DB_HOST')}:{os.environ.get('DB_PORT')}/{os.environ.get('DB_NAME')}",
-        conn_max_age=600,
-        ssl_require=True,
-    )
-}
+else:
+    # Local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'myprojectdb',       # local DB name
+            'USER': 'myprojectuser',     # local DB user
+            'PASSWORD': 'mypassword',    # local DB password
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+
+# Optional: fallback to SQLite if PostgreSQL not available
+if not DATABASES["default"].get("ENGINE"):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 

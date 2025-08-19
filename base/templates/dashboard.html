@@ -15,7 +15,7 @@
     </div>
     <div class="text-end">
       <h3 id="wallet-amount">₦{{ request.user.userprofile.wallet_balance|default:"0.00" }}</h3>
-      <a href="{% url 'fund_wallet' %}" class="btn btn-sm btn-light mt-1">Fund Wallet</a>
+      <a href="{% url 'wallet' %}" class="btn btn-sm btn-light mt-1">Fund Wallet</a>
     </div>
   </div>
 

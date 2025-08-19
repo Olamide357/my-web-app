@@ -22,6 +22,15 @@ from .vtpass import purchaseAirtime
 
 @login_required
 def mtnAirtime(request):
+    if request.method == "POST":
+        phone = request.POST.get("phone")
+        amount = request.POST.get("amount")
+
+        result = purchaseAirtime(phone, amount)
+        return JsonResponse(result, safe=False)
+
+    return render(request, "airtime/mtn_airtime.html")
+'''
     provider = request.GET.get('provider', '')
     phone = request.GET.get('phone', '')
     if request.method == 'POST':
@@ -108,7 +117,7 @@ def mtnAirtime(request):
         form = AirtimeForm(initial={'provider': provider, 'phone': phone})
 
     return render(request, 'airtime/mtn_airtime.html', {'form': form})
-    
+    '''
 #====================== GLO AIRTIME =========================#
 @login_required
 def gloAirtime(request):

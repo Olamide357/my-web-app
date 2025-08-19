@@ -27,6 +27,9 @@ def signUp(request):
             profile = user.userprofile
             profile.phone=phone
             profile.referral_code=phone
+            
+            customer_code = create_paystack_customer(email=email, first_name=username)
+            profile.paystack_customer_code = customer_code
             profile.save()
 
             # Handle referral bonus
