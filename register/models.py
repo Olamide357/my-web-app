@@ -12,10 +12,10 @@ class UserProfile(models.Model):
     referral_code = models.CharField(max_length=12, blank=True, null=True)
 
     currency = models.CharField(max_length=3, default='NGN')
-    account_number = models.CharField(max_length=20, blank=True, null=True)
-    account_name = models.CharField(max_length=20, blank=True, null=True)
+    virtual_account_number = models.CharField(max_length=20, blank=True, null=True)
+    virtual_account_name = models.CharField(max_length=20, blank=True, null=True)
     bank_name = models.CharField(max_length=100, blank=True, null=True)
-    account_status = models.CharField(max_length=20,choices=[('pending', 'Pending'), ('assigning', 'Assigning'), ('active', 'Active'), ('failed', 'Failed')], default='pending')
+    virtual_account_status = models.CharField(max_length=20,choices=[('pending', 'Pending'), ('assigning', 'Assigning'), ('active', 'Active'), ('failed', 'Failed')], default='pending')
 
     paystack_customer_code = models.CharField(max_length=100, blank=True, null=True)
     # created_at = models.DateTimeField(auto_now_add=True)

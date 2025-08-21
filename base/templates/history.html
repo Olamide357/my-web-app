@@ -1,90 +1,122 @@
-{% extends 'base.html' %}
-{% load static %}
+{% extends "base.html" %}
 {% block content %}
+<div class="container mx-auto px-4 py-6">
 
-<h2 class="mb-3">Transactions</h2>
-<div style="margin-bottom: 10px;">
-    <input type="text" id="searchBox" placeholder="Search transactions..." style="padding: 5px; width: 100%; max-width: 300px;">
-</div>
+  <h2 class="text-3xl font-bold mb-6 text-center text-indigo-700">Transaction History</h2>
 
-<div id="transactionList">
-    {% for txn in transaction %}
-    <div class="transaction-card" data-id="{{ txn.id }}" style="display: flex; justify-content: space-between; align-items: center; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: white; cursor: pointer;">
-        <div style="display: flex; align-items: center;">
-            <div style="font-size: 24px; margin-right: 10px;">
-                {% if txn.service == "airtime" %}
-                {% elif txn.service == "data" %}
-                {% elif txn.service == "tv" %}
-                {% elif txn.service == "electricity" %}
-                {% elif txn.service == "wallet" %}
-                {% else %}
-                {% endif %}
-            </div>
-            <div>
-                <div style="font-weight: bold;">{{ txn.provider }} {{ txn.service|title }}</div>
-                <div style="font-size: 13px; color: #777;">{{ txn.date|date:"d M Y H:i" }}</div>
-            </div>
+  <!-- 🔎 Search -->
+  <form method="get" class="mb-6 flex space-x-2 max-w-lg mx-auto">
+    <input type="text" name="q" placeholder="Search by date (YYYY-MM-DD) or reference..."
+           value="{{ query }}" class="border rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-indigo-400">
+    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+      Search
+    </button>
+  </form>
+
+  <!-- 📜 Transactions List -->
+  <div class="space-y-3">
+    {% for tx in page_obj %}
+      <!-- Preview Card -->
+      <div class="border rounded-lg shadow-md bg-gradient-to-r from-blue-50 to-indigo-50 p-4 flex justify-between items-center hover:shadow-lg cursor-pointer transition"
+           onclick="openReceipt('{{ tx.id }}')">
+        <div>
+          <p class="font-semibold text-indigo-700">{{ tx.provider }}</p>
+          <p class="text-sm text-gray-500">{{ tx.date|date:"Y-m-d H:i" }}</p>
         </div>
-        <div style="text-align: right;">
-            <div style="color: green; font-weight: bold;"> ₦{{ txn.amount }}</div>
-            <div>
-                {% if txn.status == "success" %}
-                <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Success</span>
-
-                {% elif txn.status == "pending" %}
-                <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Pending</span>
-
-                {% else %}
-                <span style="background: #f8d7da; color: #721c24; padding: 3px 8px; border-radius: 12px; font-size: 12px;">Failed</span>
-                {% endif %}
-            </div>
+        <div class="text-right">
+          <p class="font-bold text-indigo-800">₦{{ tx.amount }}</p>
+          <span class="px-2 py-1 rounded text-xs font-semibold
+            {% if tx.status == 'success' %} bg-green-100 text-green-700
+            {% elif tx.status == 'failed' %} bg-red-100 text-red-700
+            {% else %} bg-yellow-100 text-yellow-700 {% endif %}">
+            {{ tx.status|title }}
+          </span>
         </div>
-    </div>
-    <!-- Hidden receipt section -->
-     <div class="receipt" id="receipt-{{ txn.id }}" style="display: none; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fafafa;">
-        <p>Laoding receipt...</p>
-     </div>
+      </div>
+
+      <!-- Receipt Modal -->
+      <div id="receipt-{{ tx.id }}" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative animate-fadeIn">
+
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-indigo-600 to-blue-500 p-4 rounded-t-2xl flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">Transaction Receipt</h3>
+            <button onclick="closeReceipt('{{ tx.id }}')"
+                    class="text-white text-lg hover:text-gray-200">✕</button>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 space-y-3 text-gray-700 text-sm">
+            <p><strong>Reference:</strong> {{ tx.reference }}</p>
+            <p><strong>Status:</strong> 
+              <span class="font-semibold 
+                {% if tx.status == 'success' %} text-green-600
+                {% elif tx.status == 'failed' %} text-red-600
+                {% else %} text-yellow-600 {% endif %}">
+                {{ tx.status|title }}
+              </span>
+            </p>
+            <p><strong>Phone/Meter:</strong> {{ tx.phone }}</p>
+            <p><strong>Provider:</strong> {{ tx.provider }}</p>
+            <p><strong>Type:</strong> {{ tx.transaction_type|title }}</p>
+            <p><strong>Amount Paid:</strong> ₦{{ tx.amount }}</p>
+            <p><strong>Cashback:</strong> ₦{{ tx.cashback }}</p>
+            <p><strong>Gross Amount:</strong> ₦{{ tx.gross_amount }}</p>
+            <p><strong>Date:</strong> {{ tx.date|date:"l, F j, Y, g:i A" }}</p>
+            {% if tx.token %}
+              <p><strong>Token:</strong> <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ tx.token }}</span></p>
+            {% endif %}
+          </div>
+
+          <!-- Footer -->
+        </div>
+      </div>
     {% empty %}
-    <p>No transactions yet.</p>
+      <p class="text-gray-500 text-center">No transactions found.</p>
     {% endfor %}
-</div>
-<script>
-    document.querySelectorAll('.transaction-card').forEach(card => {
-        card.addEventListener('click', function () {
-            let txnId = this.getAttribute('data-id');
-            let receiptDiv = document.getElementById('receipt-' + txnId);
-            // Toggle Visibility
-            if (receiptDiv.style.display === "block") {
-                receiptDiv.style.display = "none";
-                return;
-            }
-            // Hide all other receipts
-            document.querySelectorAll('.receipt').forEach(r => r.style.display = "none");
-            // Fetch receipt data
-            fetch(`/transaction/receipt/${txnId}/ajax`)
-            .then(res => res.json())
-            .then(data => {
-                receiptDiv.innerHTML = `<p><strong>Date:</strong> ${data.date}</p>
-                <p><strong>Service:</strong> ${data.service}</p>
-                <p><strong>Provider:</strong> ${data.provider}</p>
-                <p><strong>Amount:</strong> ${data.amount}</p>
-                <p><strong>Phone/Meter:</strong> ${data.phone_or_meter}</p>
-                <p><strong>Status:</strong> ${data.status}</p>
-                <p><strong>Reference ID:</strong> ${data.reference_id}</p>
-                <button onclick="window.print()">Print</button>`;
-                receiptDiv.style.display = "block";
-            });
-        });
-    });
-    // Search Filter
-    document.getElementById('searchBox').addEventListener('keyup', function () {
-        let filter = this.value.toLowerCase();
-        let cards = document.querySelectorAll('#transactionList > div');
-        cards.forEach(card => {
-            let text = card.innerText.toLowerCase();
-            card.style.display = text.includes(filter) ? 'flex' : 'none';
-        });
-    });
-</script>
+  </div>
 
+  <!-- 📍 Pagination -->
+  <div class="flex justify-between mt-6">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&q={{ query }}" 
+         class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Previous</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&q={{ query }}" 
+         class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Next</a>
+    {% endif %}
+  </div>
+
+</div>
+
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
+</style>
+
+<script>
+function openReceipt(id) {
+  document.getElementById("receipt-" + id).classList.remove("hidden");
+}
+function closeReceipt(id) {
+  document.getElementById("receipt-" + id).classList.add("hidden");
+}
+// Close when clicking outside the receipt
+document.addEventListener("click", function(e) {
+  document.querySelectorAll("[id^='receipt-']").forEach(function(modal) {
+    if (!modal.classList.contains("hidden") && e.target === modal) {
+      modal.classList.add("hidden");
+    }
+  });
+});
+</script>
 {% endblock %}

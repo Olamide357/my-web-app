@@ -1,43 +1,131 @@
-
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="image-field">
-    <img src="{% static 'images/m-t-n.png' %}" alt="MTN">
+<div class="container mt-4">
+    <!-- Centered Image + Title -->
+    <div class="text-center mb-4">
+        <div class="image-field text-center mb-4">
+            <img src="{% static 'images/m-t-n.png' %}" alt="MTN" class="network-logo">
+        </div>
+        <h2 class="fw-bold text-warning">MTN Airtime Purchase</h2>
+        <p class="text-muted">Recharge instantly and get cashback!</p>
+    </div>
+
+    <!-- Wallet Info -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Wallet Balance</h5>
+            <h4 class="fw-bold text-success">₦{{ profile.wallet_balance|floatformat:2 }}</h4>
+        </div>
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+
+        <!-- Beneficiary Selection -->
+        <div class="mb-3">
+            <label class="form-label">Select Beneficiary (Optional)</label>
+            <select id="beneficiarySelect" class="form-select">
+                <option value="">-- Enter manually --</option>
+                {% for ben in beneficiaries %}
+                <option value="{{ ben.account_number }}">{{ ben.name|default:ben.account_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="mb-3">
+            <label for="phone_number" class="form-label">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="Enter MTN number" required>
+        </div>
+
+        <!-- Amount -->
+        <div class="mb-3">
+            <label for="amount" class="form-label">Amount</label>
+            <input type="number" id="amount" name="amount" class="form-control" placeholder="Enter amount (₦)" required>
+            <small id="cashbackInfo" class="text-success fw-bold"></small>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="id_password" name="password" class="form-control" placeholder="Enter your password" required>
+        </div>
+
+        <!-- Pay Button -->
+        <button type="submit" id="payBtn" class="btn btn-warning w-100 fw-bold">
+            Pay
+        </button>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mt-3">
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="alert alert-danger">{{ message }}</div>
+            {% else %}
+            <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- API Response (Debug) -->
+        {% if response %}
+        <div class="mt-3">
+            <h5>API Response:</h5>
+            <pre>{{ response|safe }}</pre>
+        </div>
+        {% endif %}
+    </form>
 </div>
-<h2>MTN Airtime Purchase</h2>
-
-<form method="post">
-    {% csrf_token %}
-    
-    <label for="phone">Phone Number</label>
-    <input type="text" name="phone" required="required"><br><br>
-
-    <label for="amount">Amount</label>
-    <input type="number" name="amount" required="required"><br><br>
-
-    <label for="password">Password</label>
-    <input type="password" name="password" required="required"><br><br>
-    
-    <button type="submit">Buy Airtime</button>
-    <div style="margin-top: 16px;">{% for message in messages %}</div>
-    <div style="padding: 10px; border-radius: 10px; margin-bottom: 8px; background: {% if m.tags == 'error' %}#ffe5e5{% else %}#e9ffe9{% endif %};">{{ message }}</div>
-    <div>{% endfor %}</div>
-
-    {% if response %}
-    <h3>API Response:</h3>
-    <pre>{{ response|safe }}</pre>
-    {% endif %}
-</form>
 
 <style>
-    img {
-    margin: 8px;
-    object-fit: contain;
-    transition: transform .2s;
-    border-radius: 8px;
-  }
-    </style>
+    .image-field {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 15px;
+    }
+    .network-logo {
+        width: 120px;
+        height: auto;
+        border-radius: 12px;
+        transition: transform .2s;
+    }
+    .network-logo:hover {
+        transform: scale(1.05);
+    }
+</style>
 
+<script>
+    const beneficiarySelect = document.getElementById("beneficiarySelect");
+    const phoneInput = document.getElementById("phone_number");
+    const amountInput = document.getElementById("amount");
+    const payBtn = document.getElementById("payBtn");
+    const cashbackInfo = document.getElementById("cashbackInfo");
+
+    // Beneficiary autofill
+    beneficiarySelect.addEventListener("change", function() {
+        phoneInput.value = this.value ? this.value : "";
+    });
+
+    // Cashback percent (e.g., 5%)
+    const cashbackRate = 2 / 100;
+
+    // Update Pay button & show cashback info
+    amountInput.addEventListener("input", function() {
+        let amount = parseFloat(this.value);
+        if (!isNaN(amount) && amount > 0) {
+            let cashback = (amount * cashbackRate).toFixed(2);
+            let payable = (amount - cashback).toFixed(2);
+
+            // cashbackInfo.textContent = `You’ll get ₦${cashback} cashback.`;
+            payBtn.textContent = `Pay ₦${payable}`;
+        } else {
+            cashbackInfo.textContent = "";
+            payBtn.textContent = "Pay";
+        }
+    });
+</script>
 {% endblock %}

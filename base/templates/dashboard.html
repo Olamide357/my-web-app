@@ -76,71 +76,70 @@
     </div>
 
     <!-- Electricity -->
-    <div class="mb-3 sub-container" style=" margin: 10px 0;">
-      <h3>ELECTRICITY</h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; justify-items: center; margin-top: 15px;">
-        <!-- Ikeja -->
-        <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/ikedc.png' %}" alt="Ikeja" style="width: 60px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
-          <div class="dropdown-content ">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-        
-        <!-- EKO -->
-         <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/eko.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
-          <div class="dropdown-content ">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-
-        <!-- ABUJA -->
-        <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/aedc.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
-          <div class="dropdown-content ">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-
-        <!-- KADUNA -->
-        <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/kaduna.png' %}" alt="Ikeja" style="width: 80px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
-          <div class="dropdown-content ">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-
-        <!-- IBADAN -->
-        <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/ibedc.png' %}" alt="Ikeja" style="width: 70px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px;" class="menu-img">
-          <div class="dropdown-content ">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-
-        <!-- JOS -->
-        <span class="dropdown mb-5 service-link">
-          <img src="{% static 'images/jos.png' %}" alt="Ikeja" style="width: 60px; cursor: pointer; height: auto; border-radius: 10px; box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2); background: white; padding: 10px; " class="menu-img">
-          <div class="dropdown-content">
-            <a href="{% url 'ikedc_prepaid' %}">Prepaid</a>
-            <a href="{% url 'ikedc_postpaid' %}">Postpaid</a>
-          </div>
-        </span>
-
-
-      </div>
-    </div>
+<div class="mb-3 sub-container">
+  <h3>ELECTRICITY</h3>
+  <div class="service-grid">
+    <a href="{% url 'ikedc' %}" class="service-link">
+      <img src="{% static 'images/ikedc.png' %}" alt="IKEDC">
+    </a>
+    <a href="{% url 'ekedc' %}" class="service-link">
+      <img src="{% static 'images/eko.png' %}" alt="EKEDC">
+    </a>
+    <a href="{% url 'aedc' %}" class="service-link">
+      <img src="{% static 'images/aedc.png' %}" alt="AEDC">
+    </a>
+    <a href="{% url 'kaduna' %}" class="service-link">
+      <img src="{% static 'images/kaduna.png' %}" alt="KAEDC">
+    </a>
+    <a href="{% url 'ibedc' %}" class="service-link">
+      <img src="{% static 'images/ibedc.png' %}" alt="IBEDC">
+    </a>
+    <a href="{% url 'jos' %}" class="service-link">
+      <img src="{% static 'images/jos.png' %}" alt="JEDC">
+    </a>
+  </div>
+</div>
 
   </div>
 </div>
 
 <style>
+
+  .service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+    justify-items: center;
+    margin-top: 15px;
+  }
+
+  .service-link img {
+    width: 80px;
+    height: auto;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .service-link img:hover {
+    transform: scale(1.1);
+    box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 600px) {
+    .service-grid {
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .service-link img {
+      width: 70px;
+      padding: 8px;
+    }
+  }
   .wallet-container {
     background: linear-gradient(90deg, #007bff, #00c6ff);
     color: white;

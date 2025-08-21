@@ -129,6 +129,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    "widget_tweaks",
     'jazzmin',
     # 'Fund_wallet'
     'django.contrib.admin',

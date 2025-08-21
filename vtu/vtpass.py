@@ -8,14 +8,14 @@ def purchaseAirtime(phone, amount):
     request_id = str(uuid.uuid4())  # unique transaction ID
 
     payload = {
-        "serviceID": "mtn",
+        "serviceID": "etisalat",
         "amount": amount,
         "phone": phone,
         "request_id": request_id,
     }
     header = {
-        "api-key":"55eb5ed06fe22929ef41601db3956381",
-        "secret-key": "SK_181f8acb7e54f463e3b936eb81136bd7e398324c780"
+        "api-key":"cc969077fc1e06af06d73356bd05505b",
+        "secret-key": "SK_317f59f75699dfee4d534955d4012d2947171d69cb1"
     }
 
     response = requests.post(

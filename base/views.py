@@ -1,12 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils.dateformat import DateFormat
-from .models import Beneficiary
+from .models import Beneficiary, Transaction
 from .forms import BeneficiaryForm
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils.dateparse import parse_date
 
 
 # Create your views here.
@@ -17,11 +19,37 @@ def homePage(request):
 def dashboardPage(request):
     return render(request, 'dashboard.html')
 #===================== History Views ================================================================#
-
+# from wallet.models import FundingTransaction
 # History Page
+@login_required
 def historyPage(request):
-    transactions = Transaction.objects.filter(user=request.user).order_by('-date')
-    return render(request, 'history.html', {'transactions': transactions})
+    query = request.GET.get("q", "").strip()
+    transactions = Transaction.objects.filter(user=request.user).order_by("-date")
+
+    # 🔎 Search by date or reference
+    if query:
+        try:
+            # If user typed a date like 2025-08-20
+            search_date = parse_date(query)
+            if search_date:
+                transactions = transactions.filter(created_at__date=search_date)
+            else:
+                transactions = transactions.filter(
+                    Q(reference__icontains=query) |
+                    Q(provider__icontains=query) |
+                    Q(phone__icontains=query)
+                )
+        except Exception:
+            pass
+
+    paginator = Paginator(transactions, 10)  # 10 per page
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "history.html", {
+        "page_obj": page_obj,
+        "query": query,
+    })
     
 
 # Receipt

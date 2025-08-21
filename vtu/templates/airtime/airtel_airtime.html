@@ -1,27 +1,108 @@
-
-
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
-<div>
-    <img src="{% static 'images/airtel.png' %}" alt="MTN" width="70" height="70" style="position: center;">
+<div class="image-field text-center mb-4">
+    <img src="{% static 'images/airtel.png' %}" alt="Airtel" class="network-logo">
 </div>
-<h2>Airtel Airtime Purchase</h2>
 
-<form method="post">
+<h2 class="text-center mb-4" style="font-weight:600; color:#d9232d;">Airtel Airtime Purchase</h2>
+
+<form method="post" class="p-4 rounded shadow-sm" style="max-width:500px; margin:auto; background:#fff;">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Buy Airtime</button>
+    
+    <!-- Beneficiary Dropdown -->
+    <div class="mb-3">
+        <label>Select Beneficiary (Optional)</label>
+        <select id="beneficiarySelect" class="form-control">
+            <option value="">-- Enter manually --</option>
+            {% for ben in beneficiaries %}
+            <option value="{{ ben.phone_number }}">{{ ben.nickname|default:ben.phone_number }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Phone Number -->
+    <div class="mb-3">
+        <label for="id_phone_number">Phone Number</label>
+        <input type="text" name="phone_number" id="id_phone_number" class="form-control" required>
+    </div>
+
+    <!-- Amount -->
+    <div class="mb-3">
+        <label for="id_amount">Amount</label>
+        <input type="number" name="amount" id="id_amount" class="form-control" required>
+    </div>
+
+    <!-- Password -->
+    <div class="mb-3">
+        <label for="id_password">Password</label>
+        <input type="password" name="password" id="id_password" class="form-control" required>
+    </div>
+
+    <!-- Pay Button -->
+    <button type="submit" class="btn btn-danger w-100" id="payBtn">
+        Pay ₦0
+    </button>
+
+    <!-- Messages -->
+        {% if messages %}
+        <div class="mt-3">
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="alert alert-danger">{{ message }}</div>
+            {% else %}
+            <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    <!-- API Response (Debug) -->
+        {% if response %}
+        <div class="mt-3">
+            <h5>API Response:</h5>
+            <pre>{{ response|safe }}</pre>
+        </div>
+        {% endif %}
 </form>
 
 <style>
-    img {
-    margin: 8px;
-    object-fit: contain;
-    transition: transform .2s;
-    border-radius: 8px;
-  }
-    </style>
+    .image-field {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 15px;
+    }
+    .network-logo {
+        width: 120px;
+        height: auto;
+        border-radius: 12px;
+        transition: transform .2s;
+    }
+    .network-logo:hover {
+        transform: scale(1.05);
+    }
+</style>
 
+<script>
+    const beneficiarySelect = document.getElementById("beneficiarySelect");
+    const phoneInput = document.getElementById("id_phone_number");
+    const amountInput = document.getElementById("id_amount");
+    const payBtn = document.getElementById("payBtn");
+
+    // Fill phone from beneficiary
+    beneficiarySelect.addEventListener("change", function () {
+        phoneInput.value = this.value ? this.value : "";
+    });
+
+    // Update button text dynamically with cashback deduction
+    const cashbackPercent = 2; // passed from views
+    amountInput.addEventListener("input", function () {
+        let entered = parseFloat(this.value) || 0;
+        let cashback = (entered * cashbackPercent) / 100;
+        let finalAmount = entered - cashback;
+        payBtn.textContent = "Pay ₦" + finalAmount.toFixed(2);
+    });
+</script>
 {% endblock %}

@@ -14,11 +14,19 @@ urlpatterns = [
     path('data/ninemobile/', views.ninemobileData, name='ninemobile_data'),
 
     #TV
+    path("verify-iuc/", views.verify_iuc, name="verify_iuc"),
     path('tv/dstv/', views.DSTV, name='dstv'),
     path('tv/gotv/', views.GOTV, name='gotv'),
     path('tv/startime/', views.STARTIME, name='startime'),
+    
 
     # ELECTRICITY
-    path('electricty/ikedc-prepaid', views.IKEDCPrePaid, name='ikedc_prepaid'),
-    path('electricty/ikedc-postpaid', views.IKEDCPostPaid, name='ikedc_postpaid'),
+    path("verify-meter/", views.verify_meter, name="verify_iuc"),
+    path('electricty/ikedc', views.IKEDC, name='ikedc'),
+    path('electricty/ekedc', views.EKEDC, name='ekedc'),
+    path('electricty/aedc', views.AEDC, name='aedc'),
+    path('electricty/kaduna', views.KADUNA, name='kaduna'),
+    path('electricty/ibedc', views.IBEDC, name='ibedc'),
+    path('electricty/jos', views.JOS, name='jos'),
+
 ]

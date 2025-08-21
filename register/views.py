@@ -4,8 +4,8 @@ from django.http import HttpResponse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import UserProfile
 from .forms import SignupForm, LoginForm
+from wallet.utils import create_dva
 
 # Create your views here.
 
@@ -28,7 +28,13 @@ def signUp(request):
             profile.phone=phone
             profile.referral_code=phone
             
-            customer_code = create_paystack_customer(email=email, first_name=username)
+
+            try:
+                customer_code = create_paystack_customer(email=email, first_name=username)
+            except Exception as e:
+                messages.error(request, f"Paystack customer creation failed: {e}")
+                customer_code = None
+
             profile.paystack_customer_code = customer_code
             profile.save()
 

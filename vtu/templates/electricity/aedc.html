@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container mt-4 text-center">
+
+    <!-- Centered Image -->
+    <img src="{% static 'images/aedc.png' %}" alt="AEDC" class="ikedc-logo mb-4">
+
+    <h3 class="mb-3">AEDC Electricity Payment</h3>
+
+    <!-- Wallet Balance -->
+    <div class="alert alert-info">
+        Wallet Balance: <strong>₦{{ profile.wallet_balance|floatformat:2 }}</strong>
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+
+    <!-- Payment Form -->
+    <div class="card shadow-sm mb-4 mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+            <form method="post" id="purchaseForm">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+
+                <!-- Prepaid / Postpaid Selection -->
+                <div class="mb-3 text-start">
+                    <label for="id_meter_type" class="form-label">Meter Type</label>
+                    {{ form.meter_type|add_class:"form-select form-select-lg" }}
+                </div>
+
+                <!-- Optional Beneficiary -->
+                <div class="mb-3 text-start">
+                    <label for="beneficiarySelect" class="form-label">Choose Beneficiary (optional)</label>
+                    <select id="beneficiarySelect" class="form-select form-select-lg">
+                        <option value="">-- Select Beneficiary --</option>
+                        {% for b in beneficiaries %}
+                            <option value="{{ b.account_number }}">{{ b.name|default:b.account_number }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Meter Number -->
+                <div class="mb-3 text-start">
+                    <label for="id_meter_number" class="form-label">Meter Number</label>
+                    {{ form.meter_number|add_class:"form-control form-control-lg" }}
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="verifyMeter()">Verify</button>
+                    <img id="verifyLoader" src="{% static 'images/loader.gif' %}" alt="Verifying..." style="display:none; width:25px;">
+                    <small id="verifyResult" class="d-block mt-2"></small>
+                </div>
+
+                <!-- Amount -->
+                <div class="mb-3 text-start">
+                    <label for="id_amount" class="form-label">Amount (₦)</label>
+                    {{ form.amount|add_class:"form-control form-control-lg" }}
+                    <small class="text-muted">Cashback 2% will be applied automatically.</small>
+                </div>
+
+                <!-- Wallet Password -->
+                <div class="mb-3 text-start position-relative">
+                    <label for="id_password" class="form-label">Wallet Password</label>
+                    {{ form.password|add_class:"form-control form-control-lg" }}
+                    <button type="button" id="togglePassword" class="btn btn-outline-secondary position-absolute" style="top: 32px; right: 10px;">
+                        <i class="bi bi-eye" id="toggleIcon"></i>
+                    </button>
+                </div>
+
+                <!-- Pay Button -->
+                <button type="submit" id="payBtn" class="btn btn-success w-100" disabled>
+                    Pay ₦0.00
+                </button>
+            </form>
+        </div>
+    </div>
+    {% if transaction.token %}
+<div class="alert alert-success">
+    Your prepaid token: <strong>{{ transaction.token }}</strong>
+</div>
+{% endif %}
+
+</div>
+
+<style>
+.ikedc-logo {
+    width: 150px;
+    display: block;
+    margin: 0 auto 20px auto;
+    border-radius: 12px;
+    transition: transform 0.2s;
+}
+.ikedc-logo:hover {
+    transform: scale(1.05);
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const beneficiarySelect = document.getElementById("beneficiarySelect");
+    const meterField = document.getElementById("id_meter_number");
+    const amountField = document.getElementById("id_amount");
+    const payBtn = document.getElementById("payBtn");
+    const verifyResult = document.getElementById("verifyResult");
+    const verifyLoader = document.getElementById("verifyLoader");
+    const passwordField = document.getElementById("id_password");
+    const togglePassword = document.getElementById("togglePassword");
+    const toggleIcon = document.getElementById("toggleIcon");
+
+    // Auto-fill from beneficiary
+    beneficiarySelect.addEventListener("change", function() {
+        if (this.value) {
+            meterField.value = this.value;
+        }
+    });
+
+    // Enable Pay button when amount > 0
+    amountField.addEventListener("input", function() {
+        let val = parseFloat(this.value) || 0;
+        if (val > 0) {
+            let finalAmount = (val - (0.02 * val)).toFixed(2);
+            payBtn.textContent = `Pay ₦${finalAmount}`;
+            payBtn.disabled = false;
+        } else {
+            payBtn.textContent = "Pay ₦0.00";
+            payBtn.disabled = true;
+        }
+    });
+
+    // Toggle password visibility
+    togglePassword.addEventListener("click", function(e) {
+        e.preventDefault();
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            toggleIcon.classList.replace("bi-eye", "bi-eye-slash");
+        } else {
+            passwordField.type = "password";
+            toggleIcon.classList.replace("bi-eye-slash", "bi-eye");
+        }
+    });
+
+    // Verify Meter (fetch API)
+    window.verifyMeter = function() {
+        const meterType = document.getElementById("id_meter_type").value;
+        const meter = meterField.value.trim();
+        if (!meter) {
+            verifyResult.textContent = "Enter a meter number first.";
+            verifyResult.className = "text-danger";
+            return;
+        }
+
+        verifyLoader.style.display = "inline-block";
+        verifyResult.textContent = "";
+
+        fetch(`/verify-meter/?meter_number=${meter}&disco=IKEDC&meter_type=${meterType}`)
+            .then(res => res.json())
+            .then(data => {
+                verifyLoader.style.display = "none";
+                if (data.status === "success") {
+                    verifyResult.innerHTML = `Customer: <strong>${data.customer_name}</strong>`;
+                    verifyResult.className = "text-success";
+                } else {
+                    verifyResult.innerHTML = `Error: ${data.message}`;
+                    verifyResult.className = "text-danger";
+                }
+            })
+            .catch(err => {
+                verifyLoader.style.display = "none";
+                verifyResult.innerHTML = `Error: ${err}`;
+                verifyResult.className = "text-danger";
+            });
+    }
+});
+</script>
+{% endblock %}

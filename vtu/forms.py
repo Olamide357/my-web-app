@@ -3,146 +3,145 @@ from django.conf import settings
 
 
 #===================== AIRTIME FORM ==================#
+
 class AirtimeForm(forms.Form):
-    phone = forms.CharField(max_length=11, label='Phone Number')
-    amount = forms.DecimalField(max_digits=10, decimal_places=2)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
+    phone_number = forms.CharField(max_length=15, label="Phone Number")
+    amount = forms.DecimalField(min_value=50, max_digits=10, decimal_places=2, label="Amount")
+    password = forms.CharField(widget=forms.PasswordInput, label="Wallet Password")
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data['phone_number'].strip()
+        # Remove spaces or dashes if any
+        phone = phone.replace(" ", "").replace("-", "")
+        if not phone.isdigit():
+            raise forms.ValidationError("Phone number must be numeric.")
+        return phone
+
+    def clean_amount(self):
+        amt = self.cleaned_data['amount']
+        if amt < 50:
+            raise forms.ValidationError("Minimum airtime purchase is 50 NGN.")
+        return amt
+
 #======================================================#
 
-MTN_DATA_CHOICES = [
-        ("500", '500MB SME (30 Days) - ₦250'),
-        ("M1024", '1GB SME (30 Days) - ₦600'),
-        ('M2024', '2GB SME (30 Days) -  ₦1200'),
-        ('3000', '3GB SME 30 Days -  ₦1500'),
-        ("5000", "5GB SME (30 Days) - ₦2500"),
-        ("10000", "10GB SME (30 Days) - ₦5000")
-    ]
+# forms.py
+from django import forms
+from .models import DataPlan
 
-GLO_DATA_CHOICES = [
-        ("glo-cg_m_200mb", '200MB (30 Days) CG - ₦70'),
-        ("glo-cg_m_500mb", '500MB (30 Days) CG - ₦225'),
-        ("glo-cg_m_500mb", '1GB (30 Days) CG - ₦450'),
-        ("glo-cg_m_500mb", '2GB (30 Days) CG - ₦800'),
-        ("glo-cg_m_500mb", '3GB (30 Days) CG - ₦1200'),
-        ("glo-cg_m_500mb", '5GB (30 Days) CG - ₦2200'),
-        ("glo-cg_m_10gb", '10GB (30 Days) CG - ₦4300'),
-    ]
+class DataPurchaseForm(forms.Form):
+    phone_number = forms.CharField(
+        label="Phone Number",
+        max_length=11,
+        widget=forms.TextInput(attrs={"placeholder": "Enter Phone Number", "id": "id_phone_number"})
+    )
+    plan = forms.ModelChoiceField(
+        queryset=DataPlan.objects.none(),  # we’ll set queryset dynamically
+        label="Data Plan"
+    )
+    password = forms.CharField(
+        label="Wallet Password",
+        widget=forms.PasswordInput(attrs={"id": "id_password", "placeholder": "Enter Wallet Password"})
+    )
 
-
-#============= MTN DATA FORM ======================#
-class mtnDataForm(forms.Form):
-    phone = forms.CharField(max_length=11, label='Phone Number')
-    plan = forms.ChoiceField(choices=MTN_DATA_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
-    # network_id = 1
-
-    def get_mtnplan_price(self):
-        selected_plan = self.cleaned_data.get("plan")
-        for code, label in MTN_DATA_CHOICES:
-            if code == selected_plan:
-                try:
-                    return int(label.split("₦")[-1])
-                except:
-                    return None
-        return None
-#======================================================#
-
-#================ GLO DATA FORM =======================#
-class gloDataForm(forms.Form):
-    phone_number = forms.CharField(max_length=11, label='Phone Number')
-    plan = forms.ChoiceField(choices=GLO_DATA_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
-    # network_id = 4
-
-    def get_gloplan_price(self):
-        selected_plan = self.cleaned_data.get("plan")
-        for code, label in GLO_DATA_CHOICES:
-            if code == selected_plan:
-                try:
-                    return int(label.split("₦")[-1])
-                except:
-                    return None
-        return None
-#======================================================#
+    def __init__(self, *args, **kwargs):
+        network = kwargs.pop("network", None)
+        super().__init__(*args, **kwargs)
+        if network:
+            # Only show MTN plans
+            self.fields["plan"].queryset = DataPlan.objects.filter(network=network)
 
 
-class airtelDataForm(forms.Form):
-    DATA_CHOICES = [
-        ('airtel-500mb', '500MB - ₦150'),
-        ('airtel-1gb', '1GB - ₦300'),
-        ('airtel-2gb', '2GB - ₦500'),
-        ('airtel-5gb', '5GB - ₦1000'),
-    ]
+#======================= TV FORMS =============================@
+from .models import TVPlan
 
-    phone = forms.CharField(max_length=11, label='Phone Number')
-    plan = forms.ChoiceField(choices=DATA_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
+class TVPurchaseForm(forms.Form):
+    smartcard_number = forms.CharField(
+        label="Smart Card / IUC Number",
+        max_length=20,
+        widget=forms.TextInput(attrs={"placeholder": "Enter Smart Card Number", "id": "id_smartcard"})
+    )
+    plan = forms.ModelChoiceField(
+        queryset=TVPlan.objects.none(),
+        label="TV Package"
+    )
+    password = forms.CharField(
+        label="Wallet Password",
+        widget=forms.PasswordInput(attrs={"id": "id_password", "placeholder": "Enter Wallet Password"})
+    )
 
-class ninemobileDataForm(forms.Form):
-    DATA_CHOICES = [
-        ('etisalat-500mb', '500MB - ₦70'),
-        ('etisalat-1gb', '1GB - ₦300'),
-        ('etisalat-2gb', '2GB - ₦500'),
-        ('etisalat-5gb', '5GB - ₦1000'),
-    ]
+    def __init__(self, *args, **kwargs):
+        provider = kwargs.pop("provider", None)
+        super().__init__(*args, **kwargs)
+        if provider:
+            self.fields["plan"].queryset = TVPlan.objects.filter(provider=provider)
 
-    phone = forms.CharField(max_length=11, label='Phone Number')
-    plan = forms.ChoiceField(choices=DATA_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
+#==============================================================#
 
+#================= ELECTRICITY ================================#
+from django import forms
+from django.core.validators import MinValueValidator
 
+METER_TYPE_CHOICES = [
+    ("prepaid", "Prepaid"),
+    ("postpaid", "Postpaid"),
+]
 
-
-#========================= TV FORMS ====================================================#
-
-#====DSTV
-class DSTVForm(forms.Form):
-    PLAN_CHOICES = [
-        ('dstv-padi', 'DSTV Padi - ₦2500'),
-        ('dstv-yanga', 'DSTV Yanga - ₦3500'),
-        ('dstv-confam', 'DSTV Confam - ₦6200'),
-        ('dstv-compact', 'DSTV Compact - ₦10700'),
-    ]
-
-    smartcard_number = forms.CharField(max_length=30, label='Smartcard Number')
-    plan = forms.ChoiceField(choices=PLAN_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
-
-#====GOTV
-class GOTVForm(forms.Form):
-    PLAN_CHOICES = [
-        ('gotv-smallie', 'GOTV Smallie - ₦1500'),
-        ('gotv-jinja', 'GOTV Jinja - ₦3000'),
-        ('gotv-jolli', 'GOTV Jolli - ₦6200'),
-        ('gotv-max', 'GOTV Max - ₦10700'),
-    ]
-
-    smartcard_number = forms.CharField(max_length=10, label='IUC Number')
-    plan = forms.ChoiceField(choices=PLAN_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
-
-#====STARTIMES
-class STARTIMESForm(forms.Form):
-    PLAN_CHOICES = [
-        ('nova', 'Nova - ₦1200'),
-        ('basic', 'Basic - ₦2000'),
-        ('classic', 'Classic - ₦4000'),
-        ('super', 'Super - ₦6000'),
-    ]
-
-    smartcard_number = forms.CharField(max_length=10, label='Smartcard/IUC Number')
-    plan = forms.ChoiceField(choices=PLAN_CHOICES, label='Select Plan')
-    # variation_code = forms.CharField(max_length=50)
-    password = forms.CharField(widget=forms.PasswordInput, label='Account Password')
+class ElectricityForm(forms.Form):
+    meter_type = forms.ChoiceField(
+        choices=METER_TYPE_CHOICES,
+        widget=forms.Select(attrs={"class": "form-select form-select-lg"})
+    )
+    meter_number = forms.CharField(
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            "class": "form-control form-control-lg",
+            "placeholder": "Enter meter number"
+        })
+    )
+    amount = forms.DecimalField(
+        decimal_places=2,
+        min_value=100,
+        validators=[MinValueValidator(100)],
+        widget=forms.NumberInput(attrs={
+            "class": "form-control form-control-lg",
+            "placeholder": "Enter amount"
+        })
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control form-control-lg",
+            "placeholder": "Enter wallet password"
+        })
+    )
 
 
-#=========================== ELECTRICITY ==============================#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #========= IKEDC PREPAID FORM ================#
 class prepaidForm(forms.Form):
