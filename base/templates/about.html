@@ -1,21 +1,137 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="profile-card" style="max-width: 500px; margin: auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);">
-    <h2 style="color: #00aaff; text-transform: uppercase;">Profile</h2>
-    <hr style="border: 1px solid #00aaff;">
-<p><strong>Username:</strong> {{ request.user.username|upper }}</p>
-<p><strong>Email:</strong> {{ request.user.email }}</p>
-<p><strong>Phone Number:</strong> {{ request.user.userprofile.phone }}</p>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4 mx-auto" style="max-width: 600px;">
+        <div class="card-body p-4">
+            <!-- Profile Header -->
+            <div class="d-flex align-items-center mb-4">
+                <div class="profile-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3"
+                     style="width: 70px; height: 70px; font-size: 28px; font-weight: bold;">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <h4 class="mb-0 text-primary text-capitalize">{{ request.user.username }}</h4>
+                    <small class="text-muted">Member since {{ request.user.date_joined|date:"F Y" }}</small>
+                </div>
+            </div>
 
-<div style="display: flex; justify-content: space-between;">
-<a href="{% url 'edit' %}" style="color: #4aa4ff; text-decoration: none; text-transform: uppercase;">edit account</a>
+            <!-- Profile Info -->
+            <h5 class="text-secondary mb-3">Account Details</h5>
+            <ul class="list-group mb-4">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>📧 Email:</strong>
+                    <span>{{ request.user.email }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>📱 Phone:</strong>
+                    <span>{{ request.user.phone }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>👤 Username:</strong>
+                    <span>{{ request.user.username|upper }}</span>
+                </li>
+            </ul>
 
-<a href="{% url 'logout' %}" style="color: red; text-decoration: none;">SIGN OUT</a>
+            <!-- Actions -->
+            <div class="d-flex flex-column gap-2">
+                <a class="btn btn-outline-primary w-100 fw-bold" onclick="openModal('editModal')" href="{% url 'edit' %}">
+                    ✏️ Edit Account
+                </a>
+
+                <button class="btn btn-outline-danger w-100 fw-bold" onclick="openModal('signoutModal')">
+                    🚪 Sign Out
+                </button>
+                <button class="btn btn-danger w-100 fw-bold" onclick="openModal('deleteModal')">
+                    🗑️ Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
-<form action="{% url 'delete_account' %}" method="POST">
-    {% csrf_token %}
-    <button type="submit" style="background: red; color: white; padding: 10px 20px; border-radius: 5px;">Delete Account</button>
-</form>
+
+<!-- Delete Account Modal -->
+<div id="deleteModal" class="custom-modal">
+    <div class="modal-content">
+        <h5 class="text-danger">⚠️ Confirm Delete</h5>
+        <p>Are you sure you want to permanently delete your account? This action cannot be undone!</p>
+        <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-secondary w-45" onclick="closeModal('deleteModal')">Cancel</button>
+            <form method="POST" action="{% url 'delete_account' %}" class="w-45">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger w-100">Yes, Delete</button>
+            </form>
+        </div>
+    </div>
 </div>
+
+<!-- Sign Out Modal -->
+<div id="signoutModal" class="custom-modal">
+    <div class="modal-content">
+        <h5 class="text-primary">🚪 Confirm Sign Out</h5>
+        <p>Are you sure you want to log out?</p>
+        <div class="d-flex justify-content-between mt-3">
+            <button class="btn btn-secondary w-45" onclick="closeModal('signoutModal')">Cancel</button>
+            <a href="{% url 'logout' %}" class="btn btn-primary w-45">Yes, Sign Out</a>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    /* Modal Base */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-modal .modal-content {
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+    }
+
+    .btn {
+        border-radius: 8px;
+        transition: all 0.3s ease-in-out;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .profile-avatar {
+        background: linear-gradient(135deg, #007bff, #00aaff);
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<script>
+    function openModal(id) {
+        document.getElementById(id).style.display = "flex";
+    }
+    function closeModal(id) {
+        document.getElementById(id).style.display = "none";
+    }
+</script>
 {% endblock %}

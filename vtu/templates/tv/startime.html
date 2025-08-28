@@ -6,7 +6,7 @@
 
     <!-- Logo -->
     <div class="image-field text-center mb-4">
-        <img src="{% static 'images/startimes.png' %}" alt="StarTimes" class="network-logo">
+        <img src="{% static 'images/startime.png' %}" alt="StarTimes" class="network-logo">
     </div>
 
     <!-- Title -->
@@ -115,6 +115,24 @@
 <style>
     .network-logo { width: 120px; border-radius: 12px; transition: .2s; }
     .network-logo:hover { transform: scale(1.05); }
+
+    /* Logo */
+    .image-field {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 15px;
+    }
+    .network-logo {
+        width: 120px;
+        height: auto;
+        border-radius: 12px;
+        transition: transform .2s;
+    }
+    .network-logo:hover {
+        transform: scale(1.05);
+    }
+
     .plan-row:hover { cursor: pointer; background-color: #f1f1f1; }
 </style>
 

@@ -1,51 +1,70 @@
+
+
 {% extends 'base.html' %}
 {% load static %}
 
 {% block content %}
-<div class="image-field text-center mb-4">
-    <img src="{% static 'images/etisalat.png' %}" alt="9mobile" class="network-logo">
-</div>
-
-<h2 class="text-center mb-4" style="font-weight:600; color:#0d8640;">9mobile Airtime Purchase</h2>
-
-<form method="post" class="p-4 rounded shadow-sm" style="max-width:500px; margin:auto; background:#fff;">
-    {% csrf_token %}
-    
-    <!-- Beneficiary Dropdown -->
-    <div class="mb-3">
-        <label>Select Beneficiary (Optional)</label>
-        <select id="beneficiarySelect" class="form-control">
-            <option value="">-- Enter manually --</option>
-            {% for ben in beneficiaries %}
-            <option value="{{ ben.phone_number }}">{{ ben.nickname|default:ben.phone_number }}</option>
-            {% endfor %}
-        </select>
+<div class="container mt-4">
+    <!-- Centered Image + Title -->
+    <div class="text-center mb-4">
+        <div class="image-field text-center mb-4">
+            <img src="{% static 'images/etisalat.png' %}" alt="ETISALAT" class="network-logo">
+        </div>
+        <h2 class="fw-bold" style="font-weight:600; color:#0d8640;">ETISALAT Airtime Purchase</h2>
+        <p class="text-muted">Recharge instantly and get cashback!</p>
     </div>
 
-    <!-- Phone Number -->
-    <div class="mb-3">
-        <label for="id_phone_number">Phone Number</label>
-        <input type="text" name="phone_number" id="id_phone_number" class="form-control" required>
-    </div>
+    <!-- Wallet Info -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Wallet Balance</h5>
+            <h4 class="fw-bold text-success">₦{{ request.user.wallet_balance|floatformat:2 }}</h4>
+        </div>
 
-    <!-- Amount -->
-    <div class="mb-3">
-        <label for="id_amount">Amount</label>
-        <input type="number" name="amount" id="id_amount" class="form-control" required>
-    </div>
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
 
-    <!-- Password -->
-    <div class="mb-3">
-        <label for="id_password">Password</label>
-        <input type="password" name="password" id="id_password" class="form-control" required>
-    </div>
+        <!-- Beneficiary Selection -->
+        <div class="mb-3">
+            <label class="form-label">Select Beneficiary (Optional)</label>
+            <select id="beneficiarySelect" class="form-select">
+                <option value="">-- Enter manually --</option>
+                {% for ben in beneficiaries %}
+                <option value="{{ ben.account_number }}">{{ ben.name|default:ben.account_number }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- Pay Button -->
-    <button type="submit" class="btn btn-success w-100" id="payBtn">
-        Pay ₦0
-    </button>
+        <!-- Phone Number -->
+        <div class="mb-3">
+            <label for="phone_number" class="form-label">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="Enter Etisalat number" required>
+        </div>
 
-    <!-- Messages -->
+        <!-- Amount -->
+        <div class="mb-3">
+            <label for="amount" class="form-label">Amount</label>
+            <input type="number" id="amount" name="amount" class="form-control" placeholder="Enter amount (₦)" required>
+            <small id="cashbackInfo" class="text-success fw-bold"></small>
+        </div>
+
+        <!-- Password -->
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group">
+            <input type="password" id="id_password" name="password" class="form-control" placeholder="Enter your password" required>
+            <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                            <i class="bi bi-eye" id="toggleIcon"></i>
+                        </button>
+        </div>
+        </div>
+
+        <!-- Pay Button -->
+        <button type="submit" id="payBtn" class="btn btn-success w-100 fw-bold">
+            Pay
+        </button>
+
+        <!-- Messages -->
         {% if messages %}
         <div class="mt-3">
             {% for message in messages %}
@@ -65,13 +84,8 @@
             <pre>{{ response|safe }}</pre>
         </div>
         {% endif %}
-    </div>
-
-    {% if response %}
-    <h3>API Response:</h3>
-    <pre>{{ response|safe }}</pre>
-    {% endif %}
-</form>
+    </form>
+</div>
 
 <style>
     .image-field {
@@ -93,22 +107,32 @@
 
 <script>
     const beneficiarySelect = document.getElementById("beneficiarySelect");
-    const phoneInput = document.getElementById("id_phone_number");
-    const amountInput = document.getElementById("id_amount");
+    const phoneInput = document.getElementById("phone_number");
+    const amountInput = document.getElementById("amount");
     const payBtn = document.getElementById("payBtn");
+    const cashbackInfo = document.getElementById("cashbackInfo");
 
-    // Fill phone from beneficiary
-    beneficiarySelect.addEventListener("change", function () {
+    // Beneficiary autofill
+    beneficiarySelect.addEventListener("change", function() {
         phoneInput.value = this.value ? this.value : "";
     });
 
-    // Update button text dynamically with cashback deduction
-    const cashbackPercent = 2; // passed from views
-    amountInput.addEventListener("input", function () {
-        let entered = parseFloat(this.value) || 0;
-        let cashback = (entered * cashbackPercent) / 100;
-        let finalAmount = entered - cashback;
-        payBtn.textContent = "Pay ₦" + finalAmount.toFixed(2);
+    // Cashback percent (e.g., 5%)
+    const cashbackRate = 2 / 100;
+
+    // Update Pay button & show cashback info
+    amountInput.addEventListener("input", function() {
+        let amount = parseFloat(this.value);
+        if (!isNaN(amount) && amount > 0) {
+            let cashback = (amount * cashbackRate).toFixed(2);
+            let payable = (amount - cashback).toFixed(2);
+
+            // cashbackInfo.textContent = `You’ll get ₦${cashback} cashback.`;
+            payBtn.textContent = `Pay ₦${payable}`;
+        } else {
+            cashbackInfo.textContent = "";
+            payBtn.textContent = "Pay";
+        }
     });
 </script>
 {% endblock %}

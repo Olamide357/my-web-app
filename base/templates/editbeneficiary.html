@@ -3,11 +3,10 @@
 {% block content %}
 
 <div class="container mt-5">
-    <h3 class="mb-4">Add Beneficiary</h3>
+    <h3 class="mb-4">Edit Beneficiary</h3>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-      <!-- <div class="form-group mb-3">
+      <div class="form-group mb-3">
             <label for="name">Beneficiary Name</label>
             <input type="text" class="form-control" id="name" name="name" value="{{ user.beneficiary.name }}" placeholder="E.g. Friend, Office, Customer" required="required">
         </div>
@@ -20,7 +19,7 @@
         <div class="form-group mb-3">
             <label for="beneficiary.provider">Provider</label>
             <input type="text" name="beneficiary.provider" class="form-control" value="{{ user.beneficiary.provider }}" id="recipient" required="required">
-        </div> -->
+        </div>
        
         <button type="submit" class="btn btn-primary">Update</button>
         <a href="{% url 'beneficiary_list' %}" class="btn btn-primary" style="display: inline-block;">Cancel</a>

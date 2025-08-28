@@ -3,12 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.utils.dateformat import DateFormat
 from .models import Beneficiary, Transaction
-from .forms import BeneficiaryForm
+from .forms import BeneficiaryForm, changePasswordForm, editProfileForm
+from register.models import UserProfile
+
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.dateparse import parse_date
+from django.contrib.auth import update_session_auth_hash
 
 
 # Create your views here.
@@ -153,8 +156,12 @@ def useBeneficiary(request, pk):
             'STARTIMES': 'startime',
         },
         'electricity': {
-            'IKEDC PREPAID': 'ikedc_prepaid',
-            'IKEDC POSTPAID': 'ikedc_postpaid',
+            'IKEDC': 'ikedc',
+            'EKEDC': 'ekedc',
+            'AEDC': 'aedc',
+            'KADUNA': 'kaduna',
+            'IBEDC': 'ibedc',
+            'JOS': 'jos',
         },
     }
     service = beneficiary.service_type.lower()
@@ -168,55 +175,73 @@ def useBeneficiary(request, pk):
 #=============== BENEFICIARY END =====================#
 
 #================== ABOUT VIEWS =====================#
+@login_required
 def aboutPage(request):
     return render(request, 'about.html')
 
 from django.contrib.auth import update_session_auth_hash
 from .forms import editProfileForm, changePasswordForm
 
+@login_required
 def editAccount(request):
-    user = request.user
-    user_profile = getattr(user, 'userprofile', None)
+    profile = request.user
+    # user_profile, created = UserProfile.objects.get_or_create(user=user)
     if request.method == 'POST':
         if 'edit_profile' in request.POST:
-            profile_form = editProfileForm(request.POST, instance=user)
+            profile_form = editProfileForm(request.POST, instance=profile)
             password_form = changePasswordForm()
             
             if profile_form.is_valid():
-                profile_form.save()
-                if user_profile:
-                    user_profile.phone = request.POST.get('phone', user_profile.phone)
-                    user_profile.save()
-                    messages.success(request, "Profile updated successfully.")
-                    return redirect('about')
-        
-        elif 'change_password' in request.POST:
-            profile_form = editProfileForm(instance=user)
+                updated_user=profile_form.save(commit=False)
+                updated_user.email = profile_form.cleaned_data.get("email", profile.email)
+                updated_user.save()
+
+                # Save phone number to UserProfile
+                phone = profile_form.cleaned_data.get("phone")
+                if phone and phone != profile.phone:
+                    profile.phone = phone
+                    profile.save()
+
+                messages.success(request, "✅ Profile updated successfully.")
+                return redirect("about")
+            else:
+                messages.error(request, "⚠️ Please correct the errors below.")
+
+        elif "change_password" in request.POST:
+            profile_form = EditProfileForm(instance=user, user=user)
             password_form = changePasswordForm(request.POST)
+
             if password_form.is_valid():
-                new_password = password_form.cleaned_data['new_password']
-                confirm_password = password_form.cleaned_data['confirm_password']
+                new_password = password_form.cleaned_data["new_password"]
+                confirm_password = password_form.cleaned_data["confirm_password"]
 
                 if new_password == confirm_password:
                     user.set_password(new_password)
                     user.save()
-                    update_session_auth_hash(request, user)
-                    messages.success(request, "Password changed successfully.")
-                    return redirect('about')
-                else:
-                    messages.error(request, "Passwords do not match.")
-    else:
-        profile_form = editProfileForm(instance=user_profile)
 
-        if user_profile:
-            profile_form.initial['phone'] = user_profile.phone
+                    update_session_auth_hash(request, user)  # keep logged in
+                    messages.success(request, "🔒 Password changed successfully.")
+                    return redirect("edit_account")
+
+                else:
+                    messages.error(request, "❌ Passwords do not match.")
+            else:
+                messages.error(request, "⚠️ Please correct the errors below.")
+
+    else:  # GET
+        profile_form = editProfileForm(instance=profile)#, user=user, initial={"phone": UserProfile.phone, "email": user.email})
         password_form = changePasswordForm()
 
-    return render(request, 'edit.html', {'profile_form': profile_form, 'password_form': password_form})
-
+    return render(
+        request,
+        "edit.html",
+        {"profile_form": profile_form, "password_form": password_form},
+    )
 #============== DELETE ACCOUNT VIEWS =============#
-# @login_required
+@login_required
 def deleteAccount(request):
-    request.user.delete()
+    user = request.user
+    user.is_active = False
+    user.save()
     messages.success(request, "Your account has been deleted.")
     return redirect('homepage')

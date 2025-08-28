@@ -14,7 +14,7 @@
       
     </div>
     <div class="text-end">
-      <h3 id="wallet-amount">₦{{ request.user.userprofile.wallet_balance|default:"0.00" }}</h3>
+      <h4 id="wallet-amount"><strong>₦{{ request.user.wallet_balance|floatformat:2 }}</strong></h4>
       <a href="{% url 'wallet' %}" class="btn btn-sm btn-light mt-1">Fund Wallet</a>
     </div>
   </div>
@@ -24,7 +24,7 @@
     <div class="d-flex justify-content-between align-items-center">
       <div>
         <small class="text-muted">Referral Code</small>
-        <span id="ref-code" class="fw-bold">{{ request.user.userprofile.referral_code }}</span>
+        <span id="ref-code" class="fw-bold">{{ request.user.referral_code }}</span>
       </div>
       <button onclick="copyReferral()" class="btn btn-outline-primary btn-sm">Copy</button>
     </div>
@@ -218,7 +218,7 @@
     visible = !visible;
     if (visible) {
       eye.classList.replace('fa-eye-slash','fa-eye');
-      amount.textContent = '₦{{ request.user.userprofile.wallet_balance|default:"0.00" }}';
+      amount.textContent = '₦{{ request.user.wallet_balance|floatformat:2 }}';
     } else {
       eye.classList.replace('fa-eye','fa-eye-slash');
       amount.textContent = '******';

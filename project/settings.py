@@ -29,7 +29,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', "dev-secret")
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
-    "localhost,127.0.0.1,.onrender.com,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng,my-web-app-wjj4.onrender.com"
+    "localhost,127.0.0.1,.onrender.com,.up.railway.app,websubapp.name.ng,www.websubapp.name.ng,my-web-app-wjj4.onrender.com,5399c0024738.ngrok-free.app"
 ).split(",")
 
 CSRF_COOKIE_SECURE = True
@@ -45,7 +45,7 @@ PAYSTACK_CALLBACK_URL = env('PAYSTACK_CALLBACK_URL')
 PAYSTACK_WEBHOOK_URL=env('PAYSTACK_WEBHOOK_URL')
 
 PAYSTACK_PUBLIC_TEST_KEY=env('PAYSTACK_PUBLIC_TEST_KEY')
-PAYSTACK_SECRET_TEST_KEY='sk_test_4370a09912654ae8b23f107a83841a9df112d48a4'
+PAYSTACK_SECRET_TEST_KEY=env('PAYSTACK_SECRET_TEST_KEY')
 
 PREFERRED_BANK_SLUG='wema-bank'
 COUNTRY_CODE='NG'
@@ -98,11 +98,6 @@ COUNTRY_CODE='NG'
 MONNIFY_WEBHOOK_URL='https://118ffa82ab5d.ngrok-free.app/wallet/webhook/monnify/'
 MONNIFY_CALLBACK_URL='https://118ffa82ab5d.ngrok-free.app/wallet/fund/callback/'
 
-    #-------- ACCOUNT DETAILS ---------------#
-BANK_NAME = env('BANK_NAME')
-ACCOUNT_NAME = env('ACCOUNT_NAME')
-ACCOUNT_NUMBER = env('ACCOUNT_NUMBER')
-
 #------- VTPASS --------#
 VTPASS_BASE_URL = env('VTPASS_BASE_URL', default='https://vtpass.com/api')
 VTPASS_APIKEY = env('VTPASS_APIKEY')
@@ -120,6 +115,17 @@ VTPASS_PASSWORD= env('VTPASS_PASSWORD')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-=rzp(cro+e3a#mk9(dmmh+)fbb=j4uomikoi_40=r5*2g=f0)q'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_SSL = False
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+
+DOMAIN = "https://5399c0024738.ngrok-free.app"
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -129,6 +135,8 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    "crispy_forms",
+    "crispy_bootstrap5",
     "widget_tweaks",
     'jazzmin',
     # 'Fund_wallet'
@@ -145,6 +153,9 @@ INSTALLED_APPS = [
     'wallet',
     'vtu',
 ]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -270,11 +281,12 @@ CSRF_TRUSTED_ORIGINS = [
     "https://my-web-app-wjj4.onrender.com",
     "https://websubapp.name.ng",
     "https://www.websubapp.name.ng",
+    "https://5399c0024738.ngrok-free.app",
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# AUTH_USER_MODEL = 'register.UserProfile'
+AUTH_USER_MODEL = "register.UserProfile"
 
 JAZZMIN_SETTINGS = {
     'site_header': 'WebSubApp',

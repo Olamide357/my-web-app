@@ -18,9 +18,10 @@ from base.models import Transaction, Beneficiary
 from django.conf import settings
 import requests
 import uuid
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
-
+current_time = datetime.now().strftime('%Y%m%d%H%M') + "ab"
 # CashBack percent for Airtime
 AIRTIME_CASHBACK_PERCENT = 0.02  # 2%
 
@@ -48,7 +49,7 @@ def mtnAirtime(request):
 @login_required
 def mtnAirtime(request):
     cashback_percent = Decimal("2")
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="MTN")
     if request.method == "POST":
         form = AirtimeForm(request.POST)
@@ -78,17 +79,19 @@ def mtnAirtime(request):
             profile.save()
 
             # Create transaction
-            # reference = "AIRTIME_" + secrets.token_hex(8)
-            reference = str(uuid.uuid4())  # unique transaction ID
+            reference = f"{current_time}" + secrets.token_hex(8)
+            # reference = str(uuid.uuid4())  # unique transaction ID
             transaction = Transaction.objects.create(
                 user=request.user,
-                provider="MTN",
+                provider="MTN-AIRTIME",
                 phone=phone,
                 amount=amount,
                 gross_amount=amount,
                 cashback=0,
                 reference=reference,
-                status="pending"
+                status="pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
             )
 
             url = f"{settings.VTPASS_BASE_URL}/pay"
@@ -129,12 +132,12 @@ def mtnAirtime(request):
                     transaction.save()
                     messages.success(request, f"MTN Airtime {amount} NGN sent to {phone}. Cashback ₦{cashback} credited.")
                 else:
-                    transaction.status = "failed"
-                    transaction.save()
-
-                    # Refund user if failed
                     profile.wallet_balance += amount
                     profile.save()
+
+                    transaction.status = "failed"
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Airtime purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
@@ -142,6 +145,7 @@ def mtnAirtime(request):
                 profile.wallet_balance += amount
                 profile.save()
                 transaction.status = "failed"
+                transaction.final_amount=profile.wallet_balance
                 transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
@@ -156,7 +160,7 @@ def mtnAirtime(request):
         "form": form,
         # "transaction": transaction,
         "profile": profile,
-        "beneficiaries": beneficiaries
+        # "beneficiaries": beneficiaries
     }
     return render(request, "airtime/mtn_airtime.html", context)
 
@@ -178,10 +182,9 @@ def gloAirtime(request):
 '''
 # GLO Airtime View
 @login_required
-@login_required
 def gloAirtime(request):
-    cashback_percent = 2
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    cashback_percent = Decimal("2")
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="GLO")
 
     if request.method == "POST":
@@ -212,16 +215,18 @@ def gloAirtime(request):
             profile.save()
 
             # Create transaction
-            reference = "AIRTIME_" + secrets.token_hex(8)
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
-                provider="GLO",
+                provider="GLO-AIRTIME",
                 phone=phone,
                 amount=amount,
                 gross_amount=amount,
                 cashback=0,
                 reference=reference,
-                status="pending"
+                status="pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Call VTpass API
@@ -233,8 +238,8 @@ def gloAirtime(request):
             }
 
             headers = {
-                "api-key":"cc969077fc1e06af06d73356bd05505b",
-                "secret-key": "SK_317f59f75699dfee4d534955d4012d2947171d69cb1"
+                "api-key":f"{settings.VTPASS_APIKEY}",
+                "secret-key": f"{settings.VTPASS_SECRET_KEY}"
             }
 
             try:
@@ -250,22 +255,26 @@ def gloAirtime(request):
                     profile.save()
 
                     transaction.cashback = cashback
-                    transaction.status = "Success"
+                    transaction.status = "success"
                     transaction.save()
                     messages.success(request, f"GLO Airtime {amount} NGN sent to {phone}. Cashback ₦{cashback} credited.")
                 else:
-                    transaction.status = "Failed"
-                    transaction.save()
+                    
                     # Refund wallet
                     profile.wallet_balance += amount
                     profile.save()
+                    transaction.status = "failed"
+                    transaction.final_amount=profile.wallet_balance
+                    transaction.save()
+                
                     messages.error(request, f"Airtime purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
                 # Refund wallet
                 profile.wallet_balance += amount
                 profile.save()
-                transaction.status = "Failed"
+                transaction.status = "failed"
+                transaction.final_amount = profile.wallet_balance
                 transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
@@ -276,7 +285,7 @@ def gloAirtime(request):
     context = {
         "form": form,
         "profile": profile,
-        "beneficiaries": beneficiaries
+        # "beneficiaries": beneficiaries
     }
     return render(request, "airtime/glo_airtime.html", context)
 
@@ -299,9 +308,9 @@ def airtelAirtime(request):
 '''
 @login_required
 def airtelAirtime(request):
-    cashback_percent = 2
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    beneficiaries = Beneficiary.objects.filter(user=request.user, provider="AIRTEL")
+    cashback_percent = Decimal("2")
+    profile = request.user
+    beneficiaries = Beneficiary.objects.filter(user=request.user, provider="Airtel")
 
     if request.method == "POST":
         form = AirtimeForm(request.POST)
@@ -315,32 +324,34 @@ def airtelAirtime(request):
                 messages.error(request, "Incorrect password.")
                 return render(request, "airtime/airtel_airtime.html", {"form": form})
 
-            # Validate Airtel network prefixes
-            # airtel_prefixes = ["0802","0808","0812","0701","0708","0901","0902","0904","0907","0912"]
-            # if not any(phone.startswith(p) for p in airtel_prefixes):
-                # messages.error(request, "Phone number does not match Airtel network.")
-                # return render(request, "airtime/airtel_airtime.html", {"form": form})
+            # Validate network: GLO prefixes
+            # glo_prefixes = ["0805","0807","0811","0815","0817","0818","0905","0907","0915"]
+            # if not any(phone.startswith(p) for p in glo_prefixes):
+                # messages.error(request, "Phone number does not match GLO network.")
+                # return render(request, "airtime/glo_airtime.html", {"form": form})
 
             # Check wallet balance
             if profile.wallet_balance < amount:
                 messages.error(request, "Insufficient wallet balance.")
                 return render(request, "airtime/airtel_airtime.html", {"form": form})
 
-            # Deduct wallet (only amount, cashback later)
+            # Deduct from wallet
             profile.wallet_balance -= amount
             profile.save()
 
-            # Create transaction with cashback = 0 for now
-            reference = "AIRTIME_" + secrets.token_hex(8)
+            # Create transaction
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
-                provider="AIRTEL",
+                provider="AIRTEL-AIRTIME",
                 phone=phone,
                 amount=amount,
                 gross_amount=amount,
                 cashback=0,
                 reference=reference,
-                status="Pending"
+                status="pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Call VTpass API
@@ -352,40 +363,43 @@ def airtelAirtime(request):
             }
 
             headers = {
-                "api-key":"cc969077fc1e06af06d73356bd05505b",
-                "secret-key": "SK_317f59f75699dfee4d534955d4012d2947171d69cb1"
+                "api-key":f"{settings.VTPASS_APIKEY}",
+                "secret-key": f"{settings.VTPASS_SECRET_KEY}"
             }
 
             try:
                 response = requests.post(f"{settings.VTPASS_BASE_URL}/pay", json=payload, headers=headers)
                 response.raise_for_status()
                 data = response.json()
-                logger.info(f"VTpass Airtel airtime response: {data}")
+                logger.info(f"AIRTEL airtime response: {data}")
 
                 if data.get("code") == "000":
-                    # ✅ Success → add cashback
+                    # Calculate cashback
                     cashback = round(amount * cashback_percent / 100, 2)
                     profile.wallet_balance += cashback
                     profile.save()
 
                     transaction.cashback = cashback
-                    transaction.status = "Success"
+                    transaction.status = "success"
                     transaction.save()
-
-                    messages.success(request, f"Airtel Airtime ₦{amount} sent to {phone}. Cashback ₦{cashback} credited.")
+                    messages.success(request, f"AIRTEL Airtime {amount} NGN sent to {phone}. Cashback ₦{cashback} credited.")
                 else:
-                    transaction.status = "Failed"
-                    transaction.save()
-                    # Refund user
+                    
+                    # Refund wallet
                     profile.wallet_balance += amount
                     profile.save()
+                    transaction.status = "failed"
+                    transaction.final_amount=profile.wallet_balance
+                    transaction.save()
+                
                     messages.error(request, f"Airtime purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
                 # Refund wallet
                 profile.wallet_balance += amount
                 profile.save()
-                transaction.status = "Failed"
+                transaction.status = "failed"
+                transaction.final_amount = profile.wallet_balance
                 transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
@@ -418,9 +432,9 @@ def ninemobileAirtime(request):
 '''
 @login_required
 def ninemobileAirtime(request):
-    cashback_percent = 2
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    beneficiaries = Beneficiary.objects.filter(user=request.user, provider="9MOBILE")
+    cashback_percent = Decimal("2")
+    profile = request.user
+    beneficiaries = Beneficiary.objects.filter(user=request.user, provider="9Mobile")
 
     if request.method == "POST":
         form = AirtimeForm(request.POST)
@@ -434,32 +448,34 @@ def ninemobileAirtime(request):
                 messages.error(request, "Incorrect password.")
                 return render(request, "airtime/ninemobile_airtime.html", {"form": form})
 
-            # ✅ Validate 9mobile network prefixes
-            # nine_mobile_prefixes = ["0809", "0817", "0818", "0908", "0909"]
-            # if not any(phone.startswith(p) for p in nine_mobile_prefixes):
-                # messages.error(request, "Phone number does not match 9mobile network.")
-                # return render(request, "airtime/ninemobile_airtime.html", {"form": form})
+            # Validate network: GLO prefixes
+            # glo_prefixes = ["0805","0807","0811","0815","0817","0818","0905","0907","0915"]
+            # if not any(phone.startswith(p) for p in glo_prefixes):
+                # messages.error(request, "Phone number does not match GLO network.")
+                # return render(request, "airtime/glo_airtime.html", {"form": form})
 
             # Check wallet balance
             if profile.wallet_balance < amount:
                 messages.error(request, "Insufficient wallet balance.")
                 return render(request, "airtime/ninemobile_airtime.html", {"form": form})
 
-            # Deduct wallet (only amount, cashback later)
+            # Deduct from wallet
             profile.wallet_balance -= amount
             profile.save()
 
             # Create transaction
-            reference = "AIRTIME_9MOBILE_" + secrets.token_hex(8)
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
-                provider="9MOBILE",
+                provider="ETISALAT-AIRTIME",
                 phone=phone,
                 amount=amount,
                 gross_amount=amount,
                 cashback=0,
                 reference=reference,
-                status="Pending"
+                status="pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Call VTpass API
@@ -471,40 +487,43 @@ def ninemobileAirtime(request):
             }
 
             headers = {
-                "api-key":"cc969077fc1e06af06d73356bd05505b",
-                "secret-key": "SK_317f59f75699dfee4d534955d4012d2947171d69cb1"
+                "api-key":f"{settings.VTPASS_APIKEY}",
+                "secret-key": f"{settings.VTPASS_SECRET_KEY}"
             }
 
             try:
                 response = requests.post(f"{settings.VTPASS_BASE_URL}/pay", json=payload, headers=headers)
                 response.raise_for_status()
                 data = response.json()
-                logger.info(f"9mobile airtime response: {data}")
+                logger.info(f"ETISALAT airtime response: {data}")
 
                 if data.get("code") == "000":
-                    # ✅ Success → add cashback
+                    # Calculate cashback
                     cashback = round(amount * cashback_percent / 100, 2)
                     profile.wallet_balance += cashback
                     profile.save()
 
                     transaction.cashback = cashback
-                    transaction.status = "Success"
+                    transaction.status = "success"
                     transaction.save()
-
-                    messages.success(request, f"9mobile Airtime ₦{amount} sent to {phone}. Cashback ₦{cashback} credited.")
+                    messages.success(request, f"ETISALAT Airtime {amount} NGN sent to {phone}. Cashback ₦{cashback} credited.")
                 else:
-                    transaction.status = "Failed"
-                    transaction.save()
-                    # Refund user
+                    
+                    # Refund wallet
                     profile.wallet_balance += amount
                     profile.save()
+                    transaction.status = "failed"
+                    transaction.final_amount=profile.wallet_balance
+                    transaction.save()
+                
                     messages.error(request, f"Airtime purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
                 # Refund wallet
                 profile.wallet_balance += amount
                 profile.save()
-                transaction.status = "Failed"
+                transaction.status = "failed"
+                transaction.final_amount = profile.wallet_balance
                 transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
@@ -545,7 +564,7 @@ from .forms import DataPurchaseForm
 
 @login_required
 def mtnData(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="MTN")
 
     if request.method == "POST":
@@ -578,7 +597,7 @@ def mtnData(request):
             profile.save()
 
             # Create a transaction
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="MTN-DATA",
@@ -587,7 +606,9 @@ def mtnData(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Prepare payload for VTpass
@@ -619,6 +640,8 @@ def mtnData(request):
                     # Refund wallet
                     profile.wallet_balance += plan.amount
                     profile.save()
+                    transaction.final_amount=profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
@@ -626,6 +649,8 @@ def mtnData(request):
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount=profile.wallet_balance
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("mtn_data")
@@ -643,7 +668,7 @@ def mtnData(request):
 # ================= GLO DATA ================== #
 @login_required
 def gloData(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="GLO")
 
     if request.method == "POST":
@@ -676,7 +701,7 @@ def gloData(request):
             profile.save()
 
             # Create a transaction
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="GLO-DATA",
@@ -685,7 +710,9 @@ def gloData(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Prepare payload for VTpass
@@ -717,6 +744,9 @@ def gloData(request):
                     # Refund wallet
                     profile.wallet_balance += plan.amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
@@ -724,6 +754,9 @@ def gloData(request):
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("glo_data")
@@ -741,7 +774,7 @@ def gloData(request):
 # ================= AIRTEL DATA ================== #
 @login_required
 def airtelData(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="AIRTEL")
 
     if request.method == "POST":
@@ -774,7 +807,7 @@ def airtelData(request):
             profile.save()
 
             # Create a transaction
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="AIRTEL-DATA",
@@ -783,7 +816,9 @@ def airtelData(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Prepare payload for VTpass
@@ -815,6 +850,9 @@ def airtelData(request):
                     # Refund wallet
                     profile.wallet_balance += plan.amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
@@ -822,6 +860,9 @@ def airtelData(request):
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("airtel_data")
@@ -839,7 +880,7 @@ def airtelData(request):
 # ================= 9MOBILE DATA ================== #
 @login_required
 def ninemobileData(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
     beneficiaries = Beneficiary.objects.filter(user=request.user, provider="9MOBILE")
 
     if request.method == "POST":
@@ -872,7 +913,7 @@ def ninemobileData(request):
             profile.save()
 
             # Create a transaction
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="ETISALAT-DATA",
@@ -881,7 +922,9 @@ def ninemobileData(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             # Prepare payload for VTpass
@@ -908,21 +951,27 @@ def ninemobileData(request):
                     transaction.save()
                     messages.success(request, f"{plan.plan_name} sent to {phone} successfully!")
                 else:
-                    transaction.status = "Failed"
+                    transaction.status = "failed"
                     transaction.save()
                     # Refund wallet
                     profile.wallet_balance += plan.amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
 
             except requests.exceptions.RequestException as e:
-                transaction.status = "Failed"
+                transaction.status = "failed"
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
-            return redirect("mtn_data")
+            return redirect("ninemobile_data")
     else:
         form = DataPurchaseForm(network="9MOBILE")
 
@@ -992,8 +1041,8 @@ def verify_iuc(request):
 
 @login_required
 def DSTV(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="DSTV")
+    profile = request.user
+    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="DSTV", provider="DSTV")
 
     if request.method == "POST":
         form = TVPurchaseForm(request.POST, provider="DSTV")
@@ -1022,7 +1071,7 @@ def DSTV(request):
             profile.wallet_balance -= plan.amount
             profile.save()
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="DSTV",
@@ -1031,7 +1080,9 @@ def DSTV(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             payload = {
@@ -1054,13 +1105,16 @@ def DSTV(request):
                 data = response.json()
 
                 if data.get("code") == "000":
-                    transaction.status = "Success"
+                    transaction.status = "success"
                     transaction.save()
                     messages.success(request, f"{plan.plan_name} activated successfully for {smartcard}!")
                 else:
-                    transaction.status = "Failed"
+                    transaction.status = "failed"
                     transaction.save()
                     profile.wallet_balance += plan.amount
+                    profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
                     profile.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
             except requests.exceptions.RequestException as e:
@@ -1068,6 +1122,9 @@ def DSTV(request):
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("dstv")
@@ -1087,8 +1144,8 @@ def DSTV(request):
 
 @login_required
 def GOTV(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="GOTV")
+    profile = request.user
+    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="GOTV", provider="GOTV")
 
     if request.method == "POST":
         form = TVPurchaseForm(request.POST, provider="GOTV")
@@ -1117,7 +1174,7 @@ def GOTV(request):
             profile.wallet_balance -= plan.amount
             profile.save()
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="GOTV",
@@ -1126,7 +1183,9 @@ def GOTV(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             payload = {
@@ -1157,12 +1216,18 @@ def GOTV(request):
                     transaction.save()
                     profile.wallet_balance += plan.amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
             except requests.exceptions.RequestException as e:
                 transaction.status = "Failed"
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("dstv")
@@ -1185,8 +1250,8 @@ def GOTV(request):
 
 @login_required
 def STARTIME(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="STARTIMES")
+    profile = request.user
+    beneficiaries = Beneficiary.objects.filter(user=request.user, service_type="STARTIMES", provider="STARTIMES")
 
     if request.method == "POST":
         form = TVPurchaseForm(request.POST, provider="STARTIMES")
@@ -1215,7 +1280,7 @@ def STARTIME(request):
             profile.wallet_balance -= plan.amount
             profile.save()
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
             transaction = Transaction.objects.create(
                 user=request.user,
                 provider="STARTIMES",
@@ -1224,7 +1289,9 @@ def STARTIME(request):
                 amount=plan.amount,
                 gross_amount=plan.amount,
                 reference=reference,
-                status="Pending"
+                status="Pending",
+                initial_amount=(profile.wallet_balance + plan.amount),
+                final_amount=(profile.wallet_balance)
             )
 
             payload = {
@@ -1255,12 +1322,18 @@ def STARTIME(request):
                     transaction.save()
                     profile.wallet_balance += plan.amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"Purchase failed: {data.get('response_description')}")
             except requests.exceptions.RequestException as e:
                 transaction.status = "Failed"
                 transaction.save()
                 profile.wallet_balance += plan.amount
                 profile.save()
+
+                transaction.final_amount = profile.wallet_balance
+                transaction.save()
                 messages.error(request, f"Network Error: {str(e)}")
 
             return redirect("startime")
@@ -1356,7 +1429,7 @@ DISCO_MAP = {
 
 @login_required
 def IKEDC(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -1380,13 +1453,13 @@ def IKEDC(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("ikedc")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
                 profile.save()
 
-                transaction_record = Transaction.objects.create(
+                transaction = Transaction.objects.create(
                     user=request.user,
                     provider="IKEDC",
                     meter_type=meter_type,
@@ -1396,12 +1469,14 @@ def IKEDC(request):
                     cashback=cashback,
                     token="",
                     reference=reference,
-                    status="Pending"
+                    status="Pending",
+                    initial_amount=profile.wallet_balance,
+                    final_amount=(profile.wallet_balance - amount)
                 )
 
                 payload = {
                     "request_id": reference,
-                    "serviceID": DISCO_MAP["IKEDC"],
+                    "serviceID": "ikeja-electric",
                     "billersCode": meter_number,
                     "variation_code": meter_type,
                     "amount": float(amount),
@@ -1414,13 +1489,13 @@ def IKEDC(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
                     if data.get("code") == "000":
-                        transaction_record.status = "Success"
-                        transaction_record.save()
+                        transaction.status = "Success"
+                        transaction.save()
 
                         token = data.get("content", {}).get("token")
                         transaction.token = token
@@ -1434,22 +1509,27 @@ def IKEDC(request):
                             f"✅ Electricity {meter_type} token purchased for {meter_number}. Cashback ₦{cashback:.2f} applied!"
                         )
                     else:
-                        transaction_record.status = "Failed"
-                        transaction_record.save()
+                        transaction.status = "Failed"
+                        transaction.save()
 
                         profile.wallet_balance += final_amount
                         profile.save()
 
+                        transaction.final_amount = profile.wallet_balance
+                        transaction.save()
+
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
-                    transaction_record.status = "Failed"
-                    transaction_record.save()
+                    transaction.status = "Failed"
+                    transaction.save()
 
                     profile.wallet_balance += final_amount
                     profile.save()
 
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"⚠️ Network Error: {str(e)}")
 
             return redirect("ikedc")
@@ -1485,7 +1565,7 @@ DISCO_MAP = {
 
 @login_required
 def EKEDC(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -1507,13 +1587,13 @@ def EKEDC(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("ekedc")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
                 profile.save()
 
-                transaction_record = Transaction.objects.create(
+                transaction = Transaction.objects.create(
                     user=request.user,
                     provider="EKEDC",
                     meter_type=meter_type,
@@ -1523,12 +1603,14 @@ def EKEDC(request):
                     cashback=cashback,
                     token="",
                     reference=reference,
-                    status="Pending"
+                    status="pending",
+                    initial_amount=(profile.wallet_balance + amount),
+                    final_amount=(profile.wallet_balance)
                 )
 
                 payload = {
                     "request_id": reference,
-                    "serviceID": DISCO_MAP["EKEDC"],
+                    "serviceID": "eko-electric",
                     "billersCode": meter_number,
                     "variation_code": meter_type,
                     "amount": float(amount),
@@ -1541,13 +1623,13 @@ def EKEDC(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
                     if data.get("code") == "000":
-                        transaction_record.status = "Success"
-                        transaction_record.save()
+                        transaction.status = "success"
+                        transaction.save()
 
                         token = data.get("content", {}).get("token")
                         transaction.token = token
@@ -1561,22 +1643,26 @@ def EKEDC(request):
                             f"✅ Electricity {meter_type} token purchased for {meter_number}. Cashback ₦{cashback:.2f} applied!"
                         )
                     else:
-                        transaction_record.status = "Failed"
-                        transaction_record.save()
+                        transaction.status = "failed"
+                        transaction.save()
 
                         profile.wallet_balance += amount
                         profile.save()
 
+                        transaction.final_amount = profile.wallet_balance
+                        transaction.save()
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
-                    transaction_record.status = "Failed"
-                    transaction_record.save()
+                    transaction.status = "failed"
+                    transaction.save()
 
                     profile.wallet_balance += final_amount
                     profile.save()
 
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
                     messages.error(request, f"⚠️ Network Error: {str(e)}")
 
             return redirect("ekedc")
@@ -1610,7 +1696,7 @@ DISCO_MAP = {
 
 @login_required
 def AEDC(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -1632,13 +1718,13 @@ def AEDC(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("aedc")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
                 profile.save()
 
-                transaction_record = Transaction.objects.create(
+                transaction = Transaction.objects.create(
                     user=request.user,
                     provider="AEDC",
                     meter_type=meter_type,
@@ -1648,7 +1734,9 @@ def AEDC(request):
                     cashback=cashback,
                     token="",
                     reference=reference,
-                    status="Pending"
+                    status="Pending",
+                    initial_amount=(profile.wallet_balance + amount),
+                    final_amount=(profile.wallet_balance)
                 )
 
                 payload = {
@@ -1666,13 +1754,14 @@ def AEDC(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
+
                     if data.get("code") == "000":
-                        transaction_record.status = "Success"
-                        transaction_record.save()
+                        transaction.status = "Success"
+                        transaction.save()
 
                         token = data.get("content", {}).get("token")
                         transaction.token = token
@@ -1686,21 +1775,27 @@ def AEDC(request):
                             f"✅ Electricity {meter_type} token purchased for {meter_number}. Cashback ₦{cashback:.2f} applied!"
                         )
                     else:
-                        transaction_record.status = "Failed"
-                        transaction_record.save()
+                        transaction.status = "Failed"
+                        transaction.save()
 
                         profile.wallet_balance += amount
                         profile.save()
 
+                        transaction.final_amount = profile.wallet_balance
+                        transaction.save()
+
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
-                    transaction_record.status = "Failed"
-                    transaction_record.save()
+                    transaction.status = "Failed"
+                    transaction.save()
 
                     profile.wallet_balance += amount
                     profile.save()
+
+                    transaction.final_amount = profile.wallet_balance
+                    transaction.save()
 
                     messages.error(request, f"⚠️ Network Error: {str(e)}")
 
@@ -1736,7 +1831,7 @@ DISCO_MAP = {
 
 @login_required
 def KADUNA(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -1758,7 +1853,7 @@ def KADUNA(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("kaduna")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
@@ -1774,7 +1869,9 @@ def KADUNA(request):
                     cashback=cashback,
                     token="",
                     reference=reference,
-                    status="Pending"
+                    status="Pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
                 )
 
                 payload = {
@@ -1792,7 +1889,7 @@ def KADUNA(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
@@ -1801,8 +1898,8 @@ def KADUNA(request):
                         transaction_record.save()
 
                         token = data.get("content", {}).get("token")
-                        transaction.token = token
-                        transaction.save()
+                        transaction_record.token = token
+                        transaction_record.save()
 
                         profile.wallet_balance += cashback
                         profile.save()
@@ -1818,8 +1915,11 @@ def KADUNA(request):
                         profile.wallet_balance += amount
                         profile.save()
 
+                        transaction_record.final_amount = profile.wallet_balance
+                        transaction_record.save()
+
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
                     transaction_record.status = "Failed"
@@ -1827,6 +1927,9 @@ def KADUNA(request):
 
                     profile.wallet_balance += amount
                     profile.save()
+
+                    transaction_record.final_amount = profile.wallet_balance
+                    transaction_record.save()
 
                     messages.error(request, f"⚠️ Network Error:")
 
@@ -1861,7 +1964,7 @@ DISCO_MAP = {
 
 @login_required
 def IBEDC(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -1883,7 +1986,7 @@ def IBEDC(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("ibedc")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
@@ -1899,7 +2002,9 @@ def IBEDC(request):
                     cashback=cashback,
                     reference=reference,
                     token="",
-                    status="Pending"
+                    status="Pending",
+                initial_amount=(profile.wallet_balance + amount),
+                final_amount=(profile.wallet_balance)
                 )
 
                 payload = {
@@ -1917,7 +2022,7 @@ def IBEDC(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
@@ -1926,8 +2031,8 @@ def IBEDC(request):
                         transaction_record.save()
 
                         token = data.get("content", {}).get("token")
-                        transaction.token = token
-                        transaction.save()
+                        transaction_record.token = token
+                        transaction_record.save()
 
                         profile.wallet_balance += cashback
                         profile.save()
@@ -1943,8 +2048,11 @@ def IBEDC(request):
                         profile.wallet_balance += amount
                         profile.save()
 
+                        transaction_record.final_amount = profile.wallet_balance
+                        transaction_record.save()
+
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
                     transaction_record.status = "Failed"
@@ -1952,6 +2060,9 @@ def IBEDC(request):
 
                     profile.wallet_balance += amount
                     profile.save()
+
+                    transaction_record.final_amount = profile.wallet_balance
+                    transaction_record.save()
 
                     messages.error(request, f"⚠️ Network Error:")
 
@@ -1986,7 +2097,7 @@ DISCO_MAP = {
 
 @login_required
 def JOS(request):
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile = request.user
 
     if request.method == "POST":
         form = ElectricityForm(request.POST)
@@ -2008,7 +2119,7 @@ def JOS(request):
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("jos")
 
-            reference = str(uuid.uuid4())
+            reference = f"{current_time}" + secrets.token_hex(8)
 
             with db_transaction.atomic():
                 profile.wallet_balance -= amount
@@ -2024,7 +2135,9 @@ def JOS(request):
                     cashback=cashback,
                     token="",
                     reference=reference,
-                    status="Pending"
+                    status="Pending",
+                initial_amount=(profile.wallet_balance  + amount),
+                final_amount=(profile.wallet_balance)
                 )
 
                 payload = {
@@ -2042,7 +2155,7 @@ def JOS(request):
 
                 try:
                     response = requests.post(f"{settings.VTPASS_BASE_URL}/pay",
-                                             json=payload, headers=headers, timeout=20)
+                    json=payload, headers=headers, timeout=20)
                     response.raise_for_status()
                     data = response.json()
 
@@ -2051,8 +2164,8 @@ def JOS(request):
                         transaction_record.save()
 
                         token = data.get("content", {}).get("token")
-                        transaction.token = token
-                        transaction.save()
+                        transaction_record.token = token
+                        transaction_record.save()
 
                         profile.wallet_balance += cashback
                         profile.save()
@@ -2068,8 +2181,11 @@ def JOS(request):
                         profile.wallet_balance += amount
                         profile.save()
 
+                        transaction_record.final_amount = profile.wallet_balance
+                        transaction_record.save()
+
                         messages.error(request,
-                                       f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
+                        f"❌ Purchase failed: {data.get('response_description') or 'Unknown error'}")
 
                 except requests.exceptions.RequestException as e:
                     transaction_record.status = "Failed"
@@ -2077,6 +2193,9 @@ def JOS(request):
 
                     profile.wallet_balance += amount
                     profile.save()
+
+                    transaction_record.final_amount = profile.wallet_balance
+                    transaction_record.save()
 
                     messages.error(request, f"⚠️ Network Error:")
 

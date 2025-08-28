@@ -50,10 +50,12 @@
                 <!-- Meter Number -->
                 <div class="mb-3 text-start">
                     <label for="id_meter_number" class="form-label">Meter Number</label>
+                    <div class="input-group">
                     {{ form.meter_number|add_class:"form-control form-control-lg" }}
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="verifyMeter()">Verify</button>
+                    <button type="button" class="btn  btn-outline-primary" onclick="verifyMeter()">Verify</button>
                     <img id="verifyLoader" src="{% static 'images/loader.gif' %}" alt="Verifying..." style="display:none; width:25px;">
                     <small id="verifyResult" class="d-block mt-2"></small>
+                    </div>
                 </div>
 
                 <!-- Amount -->
