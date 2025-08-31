@@ -1,3 +1,5 @@
+
+
 {% extends "base.html" %}
 {% load static %}
 {% load widget_tweaks %}
@@ -5,10 +7,10 @@
 {% block content %}
 <div class="container mt-4 text-center">
 
-    <!-- Centered Image -->
+     <!-- Centered Image -->
     <img src="{% static 'images/jos.png' %}" alt="JOS" class="ikedc-logo mb-4">
 
-    <h3 class="mb-3">IKEDC Electricity Payment</h3>
+    <h3 class="mb-3">IBEDC Electricity Payment</h3>
 
     <!-- Wallet Balance -->
     <div class="alert alert-info">
@@ -23,22 +25,22 @@
         </div>
     {% endfor %}
 
-    <!-- Payment Form -->
-    <div class="card shadow-sm mb-4 mx-auto" style="max-width: 500px;">
+    <!-- Payment Card -->
+    <div class="card shadow-sm mx-auto mb-4" style="max-width: 500px;">
         <div class="card-body">
             <form method="post" id="purchaseForm">
                 {% csrf_token %}
                 {{ form.non_field_errors }}
 
-                <!-- Prepaid / Postpaid Selection -->
+                <!-- Meter Type -->
                 <div class="mb-3 text-start">
                     <label for="id_meter_type" class="form-label">Meter Type</label>
                     {{ form.meter_type|add_class:"form-select form-select-lg" }}
                 </div>
 
-                <!-- Optional Beneficiary -->
+                <!-- Beneficiary -->
                 <div class="mb-3 text-start">
-                    <label for="beneficiarySelect" class="form-label">Choose Beneficiary (optional)</label>
+                    <label for="beneficiarySelect" class="form-label">Choose Beneficiary (Optional)</label>
                     <select id="beneficiarySelect" class="form-select form-select-lg">
                         <option value="">-- Select Beneficiary --</option>
                         {% for b in beneficiaries %}
@@ -51,11 +53,13 @@
                 <div class="mb-3 text-start">
                     <label for="id_meter_number" class="form-label">Meter Number</label>
                     <div class="input-group">
-                    {{ form.meter_number|add_class:"form-control form-control-lg" }}
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="verifyMeter()">Verify</button>
-                    <img id="verifyLoader" src="{% static 'images/loader.gif' %}" alt="Verifying..." style="display:none; width:25px;">
-                    <small id="verifyResult" class="d-block mt-2"></small>
+                        {{ form.meter_number|add_class:"form-control form-control-lg" }}
+                        <button type="button" class="btn btn-outline-primary" onclick="verifyMeter()">Verify</button>
+                        <div id="verifyLoader" class="spinner-border text-primary ms-2" role="status" style="display:none; width:25px; height:25px;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
                     </div>
+                    <small id="verifyResult" class="d-block mt-2"></small>
                 </div>
 
                 <!-- Amount -->
@@ -81,27 +85,31 @@
             </form>
         </div>
     </div>
+
+    <!-- Token Display -->
     {% if transaction.token %}
-<div class="alert alert-success">
-    Your prepaid token: <strong>{{ transaction.token }}</strong>
-</div>
-{% endif %}
+        <div class="alert alert-success">
+            Your prepaid token: <strong>{{ transaction.token }}</strong>
+        </div>
+    {% endif %}
 
 </div>
 
+<!-- Custom Styles -->
 <style>
 .ikedc-logo {
     width: 150px;
-    display: block;
     margin: 0 auto 20px auto;
     border-radius: 12px;
     transition: transform 0.2s;
+    display: block;
 }
 .ikedc-logo:hover {
     transform: scale(1.05);
 }
 </style>
 
+<!-- Verification Script -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const beneficiarySelect = document.getElementById("beneficiarySelect");
@@ -146,10 +154,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Verify Meter (fetch API)
+    // Verify Meter with POST request
     window.verifyMeter = function() {
         const meterType = document.getElementById("id_meter_type").value;
         const meter = meterField.value.trim();
+
         if (!meter) {
             verifyResult.textContent = "Enter a meter number first.";
             verifyResult.className = "text-danger";
@@ -159,23 +168,34 @@ document.addEventListener("DOMContentLoaded", function() {
         verifyLoader.style.display = "inline-block";
         verifyResult.textContent = "";
 
-        fetch(`/verify-meter/?meter_number=${meter}&disco=IKEDC&meter_type=${meterType}`)
-            .then(res => res.json())
-            .then(data => {
-                verifyLoader.style.display = "none";
-                if (data.status === "success") {
-                    verifyResult.innerHTML = `Customer: <strong>${data.customer_name}</strong>`;
-                    verifyResult.className = "text-success";
-                } else {
-                    verifyResult.innerHTML = `Error: ${data.message}`;
-                    verifyResult.className = "text-danger";
-                }
+        fetch("{% url 'verify_meter' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                meter_number: meter,
+                meter_type: meterType,
+                provider: "jos-electric"  // 👈 match backend view
             })
-            .catch(err => {
-                verifyLoader.style.display = "none";
-                verifyResult.innerHTML = `Error: ${err}`;
+        })
+        .then(res => res.json())
+        .then(data => {
+            verifyLoader.style.display = "none";
+            if (data.success) {
+                verifyResult.innerHTML = `Customer: <strong>${data.customer_name}</strong>`;
+                verifyResult.className = "text-success";
+            } else {
+                verifyResult.innerHTML = `Error: ${data.message}`;
                 verifyResult.className = "text-danger";
-            });
+            }
+        })
+        .catch(err => {
+            verifyLoader.style.display = "none";
+            verifyResult.innerHTML = `Error: ${err}`;
+            verifyResult.className = "text-danger";
+        });
     }
 });
 </script>

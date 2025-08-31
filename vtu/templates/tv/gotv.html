@@ -60,7 +60,7 @@
                             <div id="verifySpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;" role="status"></div>
                         </button>
                     </div>
-                    <div id="iucDetails" class="text-success mt-2" style="display:none;"></div>
+                    <div id="iucDetails" class="mt-2 fw-semibold" style="display:none;"></div>
                 </div>
 
                 <!-- Plans Table -->
@@ -103,7 +103,7 @@
                     </div>
                 </div>
 
-                <button type="submit" id="payBtn" class="btn btn-danger btn-lg w-100 shadow-sm">
+                <button type="submit" id="payBtn" class="btn btn-danger btn-lg w-100 shadow-sm" disabled>
                     Pay
                 </button>
             </form>
@@ -115,32 +115,24 @@
 <style>
     .network-logo { width: 120px; border-radius: 12px; transition: .2s; }
     .network-logo:hover { transform: scale(1.05); }
+    .plan-row:hover { cursor: pointer; background-color: #f1f1f1; }
 
-    /* Logo */
+     /* Logo */
     .image-field {
         display: flex;
         justify-content: center;
         align-items: center;
         margin-top: 15px;
     }
-    .network-logo {
-        width: 120px;
-        height: auto;
-        border-radius: 12px;
-        transition: transform .2s;
-    }
-    .network-logo:hover {
-        transform: scale(1.05);
-    }
-    
-    .plan-row:hover { cursor: pointer; background-color: #f1f1f1; }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const beneficiarySelect = document.getElementById("beneficiarySelect");
-    const iucField = document.getElementById("id_iuc_number");
+    const iucField = document.getElementById("id_smartcard");
     const verifyBtn = document.getElementById("verifyBtn");
+    const verifySpinner = document.getElementById("verifySpinner");
+    const verifyText = document.getElementById("verifyText");
     const iucDetails = document.getElementById("iucDetails");
     const planRows = document.querySelectorAll(".plan-row");
     const dropdownBtn = document.getElementById("planDropdown");
@@ -152,39 +144,57 @@ document.addEventListener("DOMContentLoaded", function() {
         iucField.value = this.value;
     });
 
-    // Verify IUC (simulate for now, replace with backend API call)
+    // Verify IUC with VTPASS
     verifyBtn.addEventListener("click", function () {
-        if(iucField.value.trim() === ""){
+        const iucValue = iucField.value.trim();
+        if(iucValue === ""){
             alert("Enter IUC number");
             return;
         }
 
-        // Show spinner + disable button
-        document.getElementById("verifySpinner").style.display = "inline-block";
-        document.getElementById("verifyText").textContent = "Verifying...";
+        verifySpinner.style.display = "inline-block";
+        verifyText.textContent = "Verifying...";
         verifyBtn.disabled = true;
         iucDetails.style.display = "none";
 
-        // Simulated API (replace with fetch to your webhook)
-        setTimeout(function(){
-            let success = Math.random() > 0.2; // simulate 80% chance success
-            if(success){
-                iucDetails.style.display = "block";
-                iucDetails.className = "mt-2 fw-semibold text-success";
-                iucDetails.textContent = "✅ Verified: Jane Doe (GOTV)";
-                payBtn.disabled = (planInput.value === "");
-            } else {
-                iucDetails.style.display = "block";
-                iucDetails.className = "mt-2 fw-semibold text-danger";
-                iucDetails.textContent = "❌ Verification failed: Invalid IUC Number";
-                payBtn.disabled = true;
-            }
+        const baseUrl = "{% url 'verify_iuc' %}";
 
-            // Reset button
-            document.getElementById("verifySpinner").style.display = "none";
-            document.getElementById("verifyText").textContent = "Verify";
+fetch(baseUrl, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: new URLSearchParams({
+        provider: "gotv",
+        smartcard_number: iucValue
+    })
+})
+.then(res => res.json())
+.then(data => {
+    iucDetails.style.display = "block";
+    if (data.success) {
+        iucDetails.className = "mt-2 fw-semibold text-success";
+        iucDetails.textContent = "✅ Verified: " + data.customer_name + " (GOTV)";
+        payBtn.disabled = (planInput.value === "");
+    } else {
+        iucDetails.className = "mt-2 fw-semibold text-danger";
+        iucDetails.textContent = "❌ Verification failed: " + data.message;
+        payBtn.disabled = true;
+    }
+})
+
+        .catch(() => {
+            iucDetails.style.display = "block";
+            iucDetails.className = "mt-2 fw-semibold text-danger";
+            iucDetails.textContent = "❌ Error connecting to verification service.";
+            payBtn.disabled = true;
+        })
+        .finally(() => {
+            verifySpinner.style.display = "none";
+            verifyText.textContent = "Verify";
             verifyBtn.disabled = false;
-        }, 2000);
+        });
     });
 
     // Plan selection
@@ -195,9 +205,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
             planInput.value = planId;
             dropdownBtn.textContent = this.cells[0].textContent + " - ₦" + amount;
-
             payBtn.innerHTML = `Pay ₦${amount}`;
-            if(iucDetails.style.display === "block") {
+
+            if(iucDetails.style.display === "block" && iucDetails.classList.contains("text-success")) {
                 payBtn.disabled = false;
             }
         });

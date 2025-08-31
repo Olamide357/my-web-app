@@ -78,7 +78,7 @@
     <div class="col-md-6">
       <div class="card mb-4">
         <div class="card-body">
-          <h5>Pay with Paystack</h5>
+          <h5">Pay with Paystack</h5>
           <p class="mb-1">Amount: ₦<span id="inlineAmount">0</span></p>
           <p class="mb-1">Fee: ₦<span id="inlineFee">0</span></p>
           <p class="mb-3">Net to Wallet: ₦<span id="inlineNet">0</span></p>
@@ -99,7 +99,7 @@
 <script>
 // -------------------- Helpers --------------------
 function calcFee(amount){
-  let fee = amount < 10000 ? 50 : Math.min(Math.floor(amount*0.015), 2000);
+  let fee = amount < 10000 ? 20 : Math.min(Math.floor(amount*0.015), 2000);
   let net = amount - fee;
   return { fee, net };
 }
@@ -235,9 +235,13 @@ genDvaBtn.addEventListener("click", async ()=> {
 
 // -------------------- Inline Paystack --------------------
 async function startPaystackPayment(alertEl, btnEl, spinEl){
-  if (selectedAmount < 100){ setAlert(alertEl, "danger", "Amount must be at least ₦100."); return; }
+  // paystackBtn.addEventListener("click", async () =>{})
+  const amt = parseFloat(amountInput.value || "0");
+  if (isNaN(amt) || amt < 100){ setAlert(alertEl, "danger", "Amount must be at least ₦100."); return; }
 
-  btnEl.querySelector(".label").classList.add("d-none");
+  selectedAmount = amt;
+
+  btnEl.querySelector(".label")?.classList.add("d-none");
   spinEl.classList.remove("d-none");
   alertEl.classList.add("d-none");
 
@@ -271,7 +275,7 @@ async function startPaystackPayment(alertEl, btnEl, spinEl){
     setAlert(alertEl, "danger", "Error starting Paystack.");
   } finally {
     spinEl.classList.add("d-none");
-    btnEl.querySelector(".label").classList.remove("d-none");
+    btnEl.querySelector(".label")?.classList.remove("d-none");
   }
 }
 

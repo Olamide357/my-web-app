@@ -106,15 +106,23 @@ def addBeneficiary(request):
     return render(request, 'addbeneficiary.html', {'form': form})
 
 # EDIT BENEFICIARY VIEWS
+@login_required
 def editBeneficiary(request, pk):
     beneficiary = get_object_or_404(Beneficiary, pk=pk, user=request.user)
     if request.method == 'POST':
         form = BeneficiaryForm(request.POST, instance=beneficiary)
 
         if form.is_valid():
-            form.save()
-            messages.success(request, "Beneficiary updated successfully.")
+            beneficiary = form.save(commit=False)
+            # form.save()
+            beneficiary.user = request.user  # make sure it's linked to the current user
+            beneficiary.save()
+            messages.success(request, "✅ Beneficiary updated successfully.")
             return redirect('beneficiary_list')
+        
+        else:
+            print("Beneficiary form errors:", form.errors.as_json())
+            messages.error(request, "⚠️ Please correct the errors below.")
     
     else:
         form = BeneficiaryForm(instance=beneficiary)
@@ -208,23 +216,23 @@ def editAccount(request):
                 messages.error(request, "⚠️ Please correct the errors below.")
 
         elif "change_password" in request.POST:
-            profile_form = EditProfileForm(instance=user, user=user)
+            profile_form = EditProfileForm(instance=profile)
             password_form = changePasswordForm(request.POST)
 
             if password_form.is_valid():
-                new_password = password_form.cleaned_data["new_password"]
-                confirm_password = password_form.cleaned_data["confirm_password"]
+                # new_password = password_form.cleaned_data["new_password"]
+                # confirm_password = password_form.cleaned_data["confirm_password"]
 
-                if new_password == confirm_password:
+                # if new_password == confirm_password:
                     user.set_password(new_password)
-                    user.save()
+                    profile.save()
 
                     update_session_auth_hash(request, user)  # keep logged in
                     messages.success(request, "🔒 Password changed successfully.")
                     return redirect("edit_account")
 
-                else:
-                    messages.error(request, "❌ Passwords do not match.")
+                # else:
+                #     messages.error(request, "❌ Passwords do not match.")
             else:
                 messages.error(request, "⚠️ Please correct the errors below.")
 

@@ -65,6 +65,8 @@ class TVPurchaseForm(forms.Form):
         queryset=TVPlan.objects.none(),
         label="TV Package"
     )
+
+    provider = forms.ChoiceField(choices=[('dstv', 'dstv'), ('gotv', 'gotv'), ('startimes', 'startimes')])
     password = forms.CharField(
         label="Wallet Password",
         widget=forms.PasswordInput(attrs={"id": "id_password", "placeholder": "Enter Wallet Password"})
@@ -101,8 +103,8 @@ class ElectricityForm(forms.Form):
     )
     amount = forms.DecimalField(
         decimal_places=2,
-        min_value=100,
-        validators=[MinValueValidator(100)],
+        # min_value=2000,
+        # validators=[MinValueValidator(2000)],
         widget=forms.NumberInput(attrs={
             "class": "form-control form-control-lg",
             "placeholder": "Enter amount"
@@ -116,42 +118,3 @@ class ElectricityForm(forms.Form):
     )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#========= IKEDC PREPAID FORM ================#
-class prepaidForm(forms.Form):
-    meter_number = forms.CharField(max_length=15, label='Meter Number')
-    amount = forms.DecimalField(label='Amount(₦)', max_digits=10, decimal_places=2)
-    password = forms.CharField(widget=forms.PasswordInput, label="Account Password")
-
-#========= IKEDC POSTPAID FORM ================#
-class postpaidForm(forms.Form):
-    meter_number = forms.CharField(max_length=15, label='Meter Number')
-    variation_code = forms.CharField(max_length=50)
-    amount = forms.DecimalField(label='Amount(₦)', max_digits=10, decimal_places=2)
-    password = forms.CharField(widget=forms.PasswordInput, label="Account Password")

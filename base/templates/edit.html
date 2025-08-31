@@ -59,6 +59,7 @@
                     <span class="toggle-password" onclick="togglePassword('id_new_password', this)">
                         👁️
                     </span>
+                    <small id="passwordHelp" class="form-text text-muted small mt-2"></small>
                 </div>
 
                 <div class="form-group mb-3 position-relative">
@@ -125,5 +126,36 @@
             toggleIcon.textContent = "👁️";
         }
     }
+</script>
+
+<!-- Password Validation Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const passwordInput = document.getElementById("id_new_password");
+    const helpText = document.getElementById("passwordHelp");
+
+    passwordInput.addEventListener("input", function () {
+        const password = passwordInput.value;
+
+        // Validation rules
+        const rules = [
+            { regex: /.{6,}/, message: "At least 6 characters" },
+            { regex: /[A-Z]/, message: "At least one uppercase letter" },
+            { regex: /\d/, message: "At least one number" },
+            { regex: /[!@#$%^&*(),.?\":{}|<>]/, message: "At least one special character" },
+        ];
+
+        // Build feedback list
+        let feedback = rules.map(rule => {
+            if (rule.regex.test(password)) {
+                return `<li class="text-success">✅ ${rule.message}</li>`;
+            } else {
+                return `<li class="text-danger">❌ ${rule.message}</li>`;
+            }
+        });
+
+        helpText.innerHTML = feedback.join("");
+    });
+});
 </script>
 {% endblock %}

@@ -28,7 +28,7 @@ def calculate_fee(amount: Decimal) -> Decimal:
     Deduct ₦50 if amount < 10,000, otherwise 1.5% capped at 2,000.
     """
     if amount < 10000:
-        return Decimal("50.00")
+        return Decimal("20.00")
     fee = amount * Decimal("0.015")
     return min(fee, Decimal("2000.00")).quantize(Decimal("1.00"))
 
@@ -45,7 +45,7 @@ def ensure_paystack_customer(profile: UserProfile):
         "email": profile.email,
         "first_name": profile.username,   # per your request
         "last_name": "User",
-        "phone": profile.phone,
+        "phone": profile.phone or "",
     }
     res = requests.post(f"{PAYSTACK_BASE_URL}/customer", headers=headers, json=payload).json()
     if not res.get("status"):
@@ -72,8 +72,9 @@ def create_or_get_dva(profile):
 
     # Create
     customer_code = ensure_paystack_customer(profile)
-    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"}
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}", "content-type": "application/json",}
     payload = {
+        "phone": profile.phone,
         "customer": customer_code,
         "preferred_bank": "wema-bank",
     }

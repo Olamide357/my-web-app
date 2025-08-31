@@ -23,4 +23,5 @@ urlpatterns = [
     path('register/', include('register.urls')),
     path('vtu/', include('vtu.urls')),
     path('wallet/', include('wallet.urls')),
+    path('page/', include('page.urls')),
 ]

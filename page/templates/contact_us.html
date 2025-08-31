@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="card contact-card">
+    <h3 class="contact-header">CONTACT US</h3>
+    <div class="text-center mb-4">
+        <i class="fa-solid fa-location-dot text-info fs-3"></i>
+        <p class="fw-bold mt-2">Osogbo, Osun State</p>
+        <br>
+        <p class="text-muted">Supplier of cheap data and airtime and utility bill payments</p>
+        <br>
+        <p>Click to send us a message on WhatsApp, call or email</p>
+        <br>
+    </div>
+    
+    <div class="contact-row">
+        <i class="fab fa-whatsapp text-success contact-icon"></i>
+        <a href="https://wa.me/2349155102845" class="text-dark text-decoration-none">09155102845</a>
+    </div>
+    <div class="contact-row">
+        <i class="fa-solid fa-phone text-primary contact-icon"></i>
+        <a href="tel:09155102845" class="text-dark text-decoration-none">09155102845</a>
+    </div>
+
+    <div class="contact-row">
+        <i class="fa-solid fa-envelope text-danger contact-icon"></i>
+        <a href="mailto:websubapp@gmail.com" class="text-dark text-decoration-none">websubapp@gmail.com</a>
+    </div>
+</div>
+
+<style>
+    .contact-card{
+        max-width: 600px;
+        margin: 50px auto;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+    }
+
+    .contact-header{
+        border-bottom: 2px solid #00aaff;
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #00aaff;
+    }
+    .contact-icon{
+        font-size: 22px;
+        margin-right: 10px;
+    }
+    .contact-row{
+        margin-bottom: 15px;
+    }
+</style>
+
+{% endblock %}

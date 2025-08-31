@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="faq-container">
+    <h2 class="faq-title">Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+        <button class="faq-question">
+            How do I fund my wallet?
+            <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+            <p>You can fund your wallet using any of our supported payment methods: <strong>DVA Transfer</strong> and <strong>Paystack</strong>.</p>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">
+            My transaction shows cancelled, will I get a refund?
+            <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+            <p>Yes, if your transaction is cancelled, you will be refunded to your wallet within <strong>24–48 hours</strong>.</p>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <button class="faq-question">
+            Can I transfer money from my wallet to my bank account?
+            <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-answer">
+            <p>No, at the moment you cannot transfer money from your wallet to your bank account.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .faq-container {
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 0 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .faq-title {
+        color: #007bff;
+        text-align: center;
+        margin-bottom: 25px;
+        font-size: 1.8rem;
+    }
+
+    .faq-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .faq-item.active {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .faq-question {
+        background-color: #f9f9f9;
+        width: 100%;
+        border: none;
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s;
+    }
+
+    .faq-question:hover {
+        background-color: #f1f1f1;
+    }
+
+    .faq-icon {
+        font-weight: bold;
+        transition: transform 0.3s;
+    }
+
+    .faq-item.active .faq-icon {
+        transform: rotate(45deg); /* Changes "+" to "×" */
+    }
+
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 20px;
+        background-color: #fff;
+        transition: max-height 0.4s ease, padding 0.4s ease;
+    }
+
+    .faq-item.active .faq-answer {
+        max-height: 200px; /* adjust depending on content */
+        padding: 15px 20px;
+    }
+
+    .faq-answer p {
+        margin: 0;
+        color: #555;
+        line-height: 1.6;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const faqQuestions = document.querySelectorAll('.faq-question');
+
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+
+                // Close all items
+                document.querySelectorAll('.faq-item').forEach(el => el.classList.remove('active'));
+
+                // Toggle clicked item
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

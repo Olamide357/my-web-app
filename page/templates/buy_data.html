@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard | SubPro{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Data -->
+    <div class="mb-3 sub-container">
+      <h3>DATA</h3>
+      <div class="d-flex justify-content-between flex-wrap">
+        <a href="{% url 'mtn_data' %}" class="service-link"><img src="{% static 'images/m-t-n.png' %}" alt="MTN"></a>
+        <a href="{% url 'glo_data' %}" class="service-link"><img src="{% static 'images/glo.png' %}" alt="GLO"></a>
+        <a href="{% url 'airtel_data' %}" class="service-link"><img src="{% static 'images/airtel.png' %}" alt="Airtel"></a>
+        <a href="{% url 'ninemobile_data' %}" class="service-link"><img src="{% static 'images/etisalat.png' %}" alt="9Mobile"></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+
+  .service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+    justify-items: center;
+    margin-top: 15px;
+  }
+
+  .service-link img {
+    width: 80px;
+    height: auto;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .service-link img:hover {
+    transform: scale(1.1);
+    box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 600px) {
+    .service-grid {
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .service-link img {
+      width: 70px;
+      padding: 8px;
+    }
+  }
+  .wallet-container {
+    background: linear-gradient(90deg, #007bff, #00c6ff);
+    color: white;
+    border-radius: 12px;
+  }
+  .wallet-container i {
+    cursor: pointer;
+    font-size: 20px;
+  }
+  .wallet-container h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-family: monospace;
+  }
+  .service-link img {
+    width: 50px;
+    height: 50px;
+    margin: 8px;
+    object-fit: contain;
+    transition: transform .2s;
+    border-radius: 8px;
+  }
+  .service-link img:hover {
+    transform: scale(1.05);
+  }
+  h5 {
+    font-weight: bold;
+  }
+
+  .sub-container{
+    background-color: rgb(190, 189, 189);
+    border-radius: 10px;
+    padding: 15px;
+  }
+  h3{
+    color: white;
+    margin-bottom: 25px;
+    border-bottom: 2px solid blue;
+  }
+
+  /* Drop down */
+  .dropdown{
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+  }
+  .dropdown-content{
+    border-radius: 10px;
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 80px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  /* Dropdown link */
+  .dropdown-content a{
+    border-radius: 7px;
+    color: black;
+    padding: 10px 14px;
+    text-decoration: none;
+    display: block;
+  }
+  .dropdown-content a:hover {
+    background-color: #f1f1f1;
+  }
+  
+</style>
+
+
+<script>
+  let visible = true;
+  function toggleWallet() {
+    const eye = document.getElementById('toggle-eye');
+    const amount = document.getElementById('wallet-amount');
+    visible = !visible;
+    if (visible) {
+      eye.classList.replace('fa-eye-slash','fa-eye');
+      amount.textContent = '₦{{ request.user.wallet_balance|floatformat:2 }}';
+    } else {
+      eye.classList.replace('fa-eye','fa-eye-slash');
+      amount.textContent = '******';
+    }
+  }
+
+  function copyReferral() {
+    const code = document.getElementById('ref-code').textContent;
+    navigator.clipboard.writeText(code).then(() => alert('Referral code copied!'));
+  }
+
+  // DROP DOWN//
+  document.addEventListener("DOMContentLoaded", function () {
+    const images = document.querySelectorAll(".menu-img");
+    images.forEach(img => {
+      img.addEventListener("click", function () {
+        const allMenus = document.querySelectorAll(".dropdown-content");
+        // close all other menu
+        allMenus.forEach(menu => {
+          if (menu !== this.nextElementSibling){menu.style.display = "none";}
+        });
+        // Toggle clicked menu
+        const dropdown = this.nextElementSibling;
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+      });
+    });
+    document.addEventListener("click", function (event) {
+      if ( !event.target.closest(".dropdown")){
+        document.querySelectorAll(".dropdown-content").forEach(menu => {
+          menu.style.display = "none";
+        });
+      }
+    });
+  });
+</script>
+
+{% endblock %}

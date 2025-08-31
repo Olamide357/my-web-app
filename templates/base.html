@@ -227,37 +227,46 @@
   <!-- Header -->
   <div class="header">
     {% if user.is_authenticated %}
-    <div class="left-nav-toggle" onclick="openNav()"><i class="fas fa-bars"></i></div>
+      <!-- Menu button (hamburger) -->
+      <button id="menu-btn" class="text-blue-600 text-xl p-2">
+        <i class="fas fa-bars"></i>
+      </button>
     {% else %}
-    <div class="auth-links">
-    <a href="{% url 'signup' %}" class="auth-btn signup">Signup</a>
-    <a href="{% url 'login' %}" class="auth-btn login">Login</a>
-    </div>
-{% endif %}
+      <div class="auth-links">
+        <a href="{% url 'signup' %}" class="auth-btn signup">Signup</a>
+        <a href="{% url 'login' %}" class="auth-btn login">Login</a>
+      </div>
+    {% endif %}
+    <h1 style="font-weight: bolder; color: #495057;">WebSubApp</h1>
     <img src="{% static 'images/logo.png' %}" alt="App Logo" class="logo">
   </div>
 
   
   <!-- Side Navigation -->
-  <div id="sideNav" class="side-nav" style="margin-top: 65px;">
-    <div class="close-nav" onclick="closeNav()" style=" position: -webkit-sticky; box-sizing: content-box;"><strong>&times;</strong></div>
-    <span>
-    <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
-    <a href="{% url 'dashboard' %}">💳 Wallet</a>
-    <a href="{% url 'dashboard' %}">📱 Buy Airtime</a>
-    <a href="{% url 'dashboard' %}">📶 Buy Data</a>
-    <a href="{% url 'dashboard' %}">📺 TV</a>
-    <a href="{% url 'dashboard' %}">⚡ Electricity</a>
-    <a href="{% url 'logout' %}">🚪 Logout</a>
-    <a href="{% url 'dashboard' %}">🏠 Dashboard</a>
-    <a href="{% url 'dashboard' %}">💳 Wallet</a>
-    <a href="{% url 'dashboard' %}">📱 Buy Airtime</a>
-    <a href="{% url 'dashboard' %}">📶 Buy Data</a>
-    <a href="{% url 'dashboard' %}">📺 TV</a>
-    <a href="{% url 'dashboard' %}">⚡ Electricity</a>
-    <a href="{% url 'logout' %}">🚪 Logout</a>
-    </span>
-</div>
+  <div id="sideNav" class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out z-50 overflow-y-auto">
+    <div class="p-4 border-b bg-blue-600 text-white flex justify-between items-center">
+      <h2 class="text-lg font-semibold">Navigation</h2>
+      <button id="close-btn"><i class="fas fa-times"></i></button>
+    </div>
+
+    <ul class="p-10 space-y-8">
+      <li><a href="{% url 'dashboard' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">🏠 Dashboard</a></li>
+      <li><a href="{% url 'balance_code' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">💳 Balance Codes</a></li>
+      <li><a href="{% url 'buy_airtime' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">📱 Buy Airtime</a></li>
+      <li><a href="{% url 'buy_data' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">📶 Buy Data</a></li>
+      <li><a href="{% url 'buy_tv' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">📺 Cable TV</a></li>
+      <li><a href="{% url 'buy_electricity' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">⚡ Electricity</a></li>
+      <li><a href="{% url 'history' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">📜 Transactions</a></li>
+      <li><a href="{% url 'about' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">👤 My Account</a></li>
+      <li><a href="{% url 'faq' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">❓ FAQ</a></li>
+      <li><a href="{% url 'contact_us' %}" class="block text-lg font-semibold text-grey-700 hover:text-blue-600 transition">☎ Contact Us</a></li>
+      <li><a href="{% url 'logout' %}" class="block text-lg font-semibold text-red-600 hover:text-red-800 transition">🚪 Logout</a></li>
+      
+    </ul>
+  </div>
+
+  <!-- Dark overlay (click to close) -->
+  <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
 
   <!-- Main Content -->
   <main class="container mt-4">
@@ -291,14 +300,27 @@
     </a>
   </div>
 {% endif %}
+  <!-- JS for Sidebar -->
   <script>
-    function openNav() {
-      document.getElementById('sideNav').style.left = "0";
-    }
-    function closeNav() {
-      document.getElementById('sideNav').style.left = "-250px";
-    }
-  </script>
+    const menuBtn = document.getElementById("menu-btn");
+    const sideNav = document.getElementById("sideNav");
+    const overlay = document.getElementById("overlay");
+    const closeBtn = document.getElementById("close-btn");
 
+    menuBtn.addEventListener("click", () => {
+      sideNav.classList.remove("-translate-x-full");
+      overlay.classList.remove("hidden");
+    });
+
+    closeBtn.addEventListener("click", () => {
+      sideNav.classList.add("-translate-x-full");
+      overlay.classList.add("hidden");
+    });
+
+    overlay.addEventListener("click", () => {
+      sideNav.classList.add("-translate-x-full");
+      overlay.classList.add("hidden");
+    });
+  </script>
 </body>
 </html>

@@ -230,7 +230,7 @@ class LoginForm(forms.Form):
             cleaned_data["user"] = user
         return cleaned_data
 
-
+import re
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 
@@ -257,3 +257,23 @@ class CustomSetPasswordForm(SetPasswordForm):
             'placeholder': 'Confirm new password'
         })
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("new_password1")
+        confirm_password = cleaned_data.get("new_password2")
+
+        if password:
+            if len(password) < 6:
+                self.add_error("new_password1", "Password must be at least 6 characters long.")
+            if not re.search(r"[A-Z]", password):
+                self.add_error("new_password1", "Password must contain at least one uppercase letter.")
+            if not re.search(r"\d", password):
+                self.add_error("new_password1", "Password must contain at least one number.")
+            if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+                self.add_error("new_password1", "Password must contain at least one special character.")
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error("new_password2", "Passwords do not match.")
+
+        return cleaned_data

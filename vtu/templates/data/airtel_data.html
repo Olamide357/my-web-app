@@ -6,12 +6,12 @@
 
     <!-- Logo -->
     <div class="image-field text-center mb-4">
-        <img src="{% static 'images/airtel.png' %}" alt="ETISALAT" class="network-logo">
+        <img src="{% static 'images/airtel.png' %}" alt="AIRTEL" class="network-logo">
     </div>
 
     <!-- Page Title -->
     <div class="text-center mb-4">
-        <h2 class="fw-bold text-primary">Buy GLO Data</h2>
+        <h2 class="fw-bold text-primary">Buy AIRTEL Data</h2>
         <p class="text-muted">Fast, secure, and reliable AIRTEL Data purchase</p>
     </div>
 
@@ -23,15 +23,18 @@
         </div>
     </div>
 
-    <!-- Flash Messages -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
+    <!-- Messages -->
+        {% if messages %}
+        <div class="mt-3">
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="alert alert-danger">{{ message }}</div>
+            {% else %}
+            <div class="alert alert-success">{{ message }}</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
 
     <!-- Data Purchase Form -->
     <div class="card shadow-lg border-0 rounded-4">

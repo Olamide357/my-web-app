@@ -139,7 +139,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const beneficiarySelect = document.getElementById("beneficiarySelect");
-    const iucField = document.getElementById("id_smartcard_number");
+    const iucField = document.getElementById("id_smartcard");
     const verifyBtn = document.getElementById("verifyBtn");
     const iucDetails = document.getElementById("iucDetails");
     const planRows = document.querySelectorAll(".plan-row");
@@ -152,40 +152,59 @@ document.addEventListener("DOMContentLoaded", function() {
         iucField.value = this.value;
     });
 
-    // Verify Smartcard
+    // Verify IUC with VTPASS
     verifyBtn.addEventListener("click", function () {
-        if(iucField.value.trim() === ""){
-            alert("Enter Smartcard number");
+        const iucValue = iucField.value.trim();
+        if(iucValue === ""){
+            alert("Enter IUC number");
             return;
         }
 
-        // Show spinner
-        document.getElementById("verifySpinner").style.display = "inline-block";
-        document.getElementById("verifyText").textContent = "Verifying...";
+        verifySpinner.style.display = "inline-block";
+        verifyText.textContent = "Verifying...";
         verifyBtn.disabled = true;
         iucDetails.style.display = "none";
 
-        // Simulated API
-        setTimeout(function(){
-            let success = Math.random() > 0.2; // 80% success simulation
-            if(success){
-                iucDetails.style.display = "block";
-                iucDetails.className = "mt-2 fw-semibold text-success";
-                iucDetails.textContent = "✅ Verified: John Doe (StarTimes)";
-                payBtn.disabled = (planInput.value === "");
-            } else {
-                iucDetails.style.display = "block";
-                iucDetails.className = "mt-2 fw-semibold text-danger";
-                iucDetails.textContent = "❌ Verification failed: Invalid Smartcard Number";
-                payBtn.disabled = true;
-            }
+        const baseUrl = "{% url 'verify_iuc' %}";
 
-            // Reset button
-            document.getElementById("verifySpinner").style.display = "none";
-            document.getElementById("verifyText").textContent = "Verify";
+fetch(baseUrl, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": "{{ csrf_token }}"
+    },
+    body: new URLSearchParams({
+        provider: "startimes",
+        smartcard_number: iucValue
+    })
+})
+.then(res => res.json())
+.then(data => {
+    iucDetails.style.display = "block";
+    if (data.success) {
+        iucDetails.className = "mt-2 fw-semibold text-success";
+        iucDetails.textContent = "✅ Verified: " + data.customer_name + " (StarTimes)";
+        payBtn.disabled = (planInput.value === "");
+    } else {
+        iucDetails.className = "mt-2 fw-semibold text-danger";
+        iucDetails.textContent = "❌ Verification failed: " + data.message;
+        payBtn.disabled = true;
+    }
+})
+
+        .catch(() => {
+            iucDetails.style.display = "block";
+            iucDetails.className = "mt-2 fw-semibold text-danger";
+            iucDetails.textContent = "❌ Error connecting to verification service.";
+            payBtn.disabled = true;
+        })
+        .finally(() => {
+            verifySpinner.style.display = "none";
+            verifyText.textContent = "Verify";
             verifyBtn.disabled = false;
-        }, 2000);
+        });
     });
+
 
     // Plan selection
     planRows.forEach(row => {

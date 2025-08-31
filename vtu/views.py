@@ -996,46 +996,58 @@ from register.models import UserProfile
 from base.models import Transaction, Beneficiary
 
 #========= VERIFY SMARTCARD ================#
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+import requests
+
+@csrf_exempt
 @login_required
 def verify_iuc(request):
-    number = request.GET.get("number")
-    provider = request.GET.get("provider")  # provider must be DSTV, GOTV, STARTIMES
+    if request.method == "POST":
+        provider = request.POST.get("provider")  # dstv, gotv, startimes
+        smartcard_number = request.POST.get("smartcard_number")
 
-    if not number or not provider:
-        return JsonResponse({"success": False, "message": "Missing number or provider"})
+        if not provider or not smartcard_number:
+            return JsonResponse({"success": False, "message": "Provider and smartcard number are required."})
 
-    payload = {
-        "serviceID": provider.lower(),   # vtpass expects dstv, gotv, startimes
-        "billersCode": number,
-    }
-    headers = {
-        "api-key": settings.VTPASS_API_KEY,
-        "secret-key": settings.VTPASS_SECRET_KEY,
-    }
+        url = f"{settings.VTPASS_BASE_URL}/merchant-verify"
+        headers = {
+            "api-key": settings.VTPASS_APIKEY,
+            "secret-key": settings.VTPASS_SECRET_KEY,
+            # "public-key": settings.VTPASS_PUBLIC_KEY,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "billersCode": smartcard_number,
+            "serviceID": provider,
+        }
 
-    try:
-        response = requests.post(
-            f"{settings.VTPASS_BASE_URL}/merchant-verify",
-            json=payload,
-            headers=headers,
-            timeout=15
-        )
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+            data = response.json()
+            print("VTPASS RESPONSE:", data)
 
-        if data.get("code") == "000":
-            return JsonResponse({
-                "success": True,
-                "name": data["content"].get("Customer_Name", "Verified Customer")
-            })
-        else:
-            return JsonResponse({
-                "success": False,
-                "message": data.get("response_description", "Verification failed")
-            })
-    except requests.exceptions.RequestException as e:
-        return JsonResponse({"success": False, "message": f"Network error: {str(e)}"})
+            if data.get("code") == "000":
+                customer_name = data["content"].get("Customer_Name", "Unknown")
+            # print("VTPASS RESPONSE:", data)
+                return JsonResponse({
+                    "success": True,
+                    "customer_name": customer_name,
+                    "raw": data
+                })
+            else:
+                return JsonResponse({
+                    "success": False,
+                    "message": data.get("response_description", "Verification failed"),
+                    "raw": data
+                })
+        
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)})
 
+    
+    return JsonResponse({"success": False, "message": "Invalid request method"})
 
 #================ DSTV ======================#
 
@@ -1355,60 +1367,82 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
+# @login_required
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+import requests
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@csrf_exempt
 @login_required
 def verify_meter(request):
-    """
-    Universal verification for all electricity providers (prepaid/postpaid)
-    """
-    meter_number = request.GET.get("meter_number")
-    disco = request.GET.get("disco")   # e.g. "ikedc", "aedc"
-    meter_type = request.GET.get("meter_type")  # "prepaid" or "postpaid"
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
 
-    if not meter_number or not disco or not meter_type:
-        return JsonResponse({"success": False, "message": "Missing parameters."})
+    provider = request.POST.get("provider")  # e.g. ikeja-electric, eko-electric
+    meter_number = request.POST.get("meter_number")
+    meter_type = request.POST.get("meter_type")  # prepaid or postpaid
 
-    # VTPass serviceID format example: "ikedc-prepaid" or "aedc-postpaid"
-    service_id = f"{disco.lower()}"
+    # Validate input
+    if not provider or not meter_number or not meter_type:
+        return JsonResponse({
+            "success": False,
+            "message": "Provider, meter number, and meter type are required."
+        }, status=400)
 
-    payload = {
-        "serviceID": service_id,
-        "billersCode": meter_number,
-        "type": f"{meter_type.lower()}"
-    }
-
+    url = f"{settings.VTPASS_BASE_URL}/merchant-verify"
     headers = {
-        "api-key": settings.VTPASS_API_KEY,
+        "api-key": settings.VTPASS_APIKEY,
         "secret-key": settings.VTPASS_SECRET_KEY,
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "billersCode": meter_number,
+        "serviceID": provider,
+        "type": meter_type.lower(),  # normalize prepaid/postpaid
     }
 
     try:
-        response = requests.post(
-            f"{settings.VTPASS_BASE_URL}/merchant-verify",
-            json=payload,
-            headers=headers,
-            timeout=15
-        )
-        response.raise_for_status()
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         data = response.json()
+        print("VTPASS RESPONSE:", data)
+        logger.info("VTPASS VERIFY METER RESPONSE: %s", data)
 
-        if data.get("code") == "000":
-            content = data.get("content", {})
+        if data.get("code") == "000":  # ✅ Successful
+            customer_name = (
+                data.get("content", {}).get("Customer_Name")
+                or data.get("content", {}).get("customerName")
+                or "Unknown"
+            )
             return JsonResponse({
-                "status": "success",
-                "customer_name": content.get("Customer_Name", "Unknown"),
-                "address": content.get("Address", "N/A"),
-                "meter_number": meter_number,
-                "disco": disco.upper(),
-                "meter_type": meter_type.capitalize()
-            })
-        else:
-            return JsonResponse({
-                "status": "error",
-                "message": data.get("response_description", "Verification failed.")
+                "success": True,
+                "customer_name": customer_name,
+                "provider": provider,
+                "meter_type": meter_type,
+                "raw": data,
             })
 
-    except requests.RequestException as e:
-        return JsonResponse({"success": False, "message": str(e)})
+        # ❌ Failed verification
+        return JsonResponse({
+            "success": False,
+            "message": data.get("response_description", "Verification failed"),
+            "raw": data,
+        }, status=400)
+
+    except requests.exceptions.Timeout:
+        return JsonResponse({"success": False, "message": "Request to provider timed out."}, status=504)
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({"success": False, "message": f"Network error: {str(e)}"}, status=502)
+    except Exception as e:
+        logger.error("Unexpected error verifying meter: %s", e, exc_info=True)
+        return JsonResponse({"success": False, "message": "Internal server error"}, status=500)
+
+
 
 #------------------- IKEDC PREPAID -----------------------@
 import uuid

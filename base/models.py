@@ -10,11 +10,28 @@ class Beneficiary(models.Model):
         ('tv', 'TV'),
         ('electricity', 'Electricity')
     ]
+
+    PROVIDER_CHOICES = [
+        ("MTN", "MTN"),
+        ("GLO", "GLO"),
+        ("AIRTEL", "Airtel"),
+        ("9MOBILE", "9Mobile"),
+        ("DSTV", "DSTV"),
+        ("GOTV", "GOTV"),
+        ("STARTIMES", "Startimes"),
+        ("IKEDC", "IKEDC"),
+        ("EKEDC", "EKEDC"),
+        ("AEDC", "AEDC"),
+        ("KADUNA", "Kaduna"),
+        ("IBEDC", "IBEDC"),
+        ("JOS", "Jos"),
+    ]
     
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="beneficiaries")
     name = models.CharField(max_length=100)
     service_type = models.CharField(max_length=20, choices=SERVICE_CHOICES)
-    provider = models.CharField(max_length=100)
+    provider = models.CharField(max_length=30, choices=PROVIDER_CHOICES)
     account_number = models.CharField(max_length=20)
     date_added = models.DateTimeField(auto_now_add=True)
 
